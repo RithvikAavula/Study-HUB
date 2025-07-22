@@ -1,10 +1,30 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, Upload, User } from "lucide-react";
+import { Menu, X, Search, Upload, User, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -15,7 +35,7 @@ export const Header = () => {
             <div className="h-8 w-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">SR</span>
             </div>
-            <span className="font-bold text-xl text-foreground">StudyResource</span>
+            <span className="font-bold text-xl text-foreground">StudyHub</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -39,16 +59,21 @@ export const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload
-            </Button>
-            <Button variant="ghost" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
-            <Button variant="hero" size="sm">
-              Login
-            </Button>
+            {user && (
+              <>
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <User className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -77,15 +102,18 @@ export const Header = () => {
                 <a href="#" className="text-foreground hover:text-primary transition-colors py-2">Upload</a>
                 <a href="#" className="text-foreground hover:text-primary transition-colors py-2">Profile</a>
               </nav>
-              <div className="flex space-x-3 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
-                <Button variant="hero" size="sm" className="flex-1">
-                  Login
-                </Button>
-              </div>
+              {user && (
+                <div className="flex space-x-3 pt-2">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
