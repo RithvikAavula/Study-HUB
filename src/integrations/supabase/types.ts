@@ -14,7 +14,166 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          resource_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resource_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resource_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          department: string
+          email: string
+          full_name: string
+          id: string
+          section: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          department: string
+          email: string
+          full_name: string
+          id?: string
+          section: string
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          department?: string
+          email?: string
+          full_name?: string
+          id?: string
+          section?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          resource_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          resource_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          resource_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          average_rating: number | null
+          created_at: string
+          department: string
+          description: string | null
+          download_count: number | null
+          file_type: string
+          file_url: string
+          id: string
+          likes_count: number | null
+          resource_type: string
+          section: string | null
+          subject: string
+          title: string
+          updated_at: string
+          uploaded_by: string
+          year: number
+        }
+        Insert: {
+          average_rating?: number | null
+          created_at?: string
+          department: string
+          description?: string | null
+          download_count?: number | null
+          file_type: string
+          file_url: string
+          id?: string
+          likes_count?: number | null
+          resource_type: string
+          section?: string | null
+          subject: string
+          title: string
+          updated_at?: string
+          uploaded_by: string
+          year: number
+        }
+        Update: {
+          average_rating?: number | null
+          created_at?: string
+          department?: string
+          description?: string | null
+          download_count?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          likes_count?: number | null
+          resource_type?: string
+          section?: string | null
+          subject?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
