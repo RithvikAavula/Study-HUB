@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Upload as UploadIcon, FileText, Image, FileX } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const departments = [
   'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI&DS', 'BIOTECH', 'CHEM', 'AEROSPACE'
@@ -99,8 +100,39 @@ const Upload = () => {
     }
 
     try {
-      // TODO: Implement actual file upload to Supabase Storage
-      // For now, just show success message
+      // Upload file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('academic-resources')
+        .upload(fileName, selectedFile);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('academic-resources')
+        .getPublicUrl(fileName);
+      
+      // Save resource metadata to database
+      const { error: dbError } = await supabase
+        .from('resources')
+        .insert({
+          title: formData.title,
+          description: formData.description,
+          department: formData.department,
+          year: parseInt(formData.year),
+          subject: formData.subject,
+          resource_type: formData.resourceType,
+          section: formData.section,
+          file_url: publicUrl,
+          file_type: selectedFile.type,
+          uploaded_by: user!.id
+        });
+      
+      if (dbError) throw dbError;
+      
       toast({
         title: "Resource Uploaded Successfully!",
         description: "Your resource is now available for other students.",
@@ -121,6 +153,7 @@ const Upload = () => {
       // Redirect to resources page
       navigate('/resources');
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload Failed",
         description: "Something went wrong. Please try again.",

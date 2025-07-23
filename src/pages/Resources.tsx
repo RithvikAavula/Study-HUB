@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Filter, SortAsc } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock data for demonstration - same as Dashboard
 const mockResources = [
@@ -102,40 +103,128 @@ const Resources = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<any>({});
   const [sortBy, setSortBy] = useState('recent');
-  const [filteredResources, setFilteredResources] = useState(mockResources);
+  const [resources, setResources] = useState<any[]>([]);
+  const [filteredResources, setFilteredResources] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
+      return;
     }
+    fetchUserProfile();
+    fetchResources();
   }, [user, navigate]);
 
-  const handleFiltersChange = (newFilters: any) => {
-    setFilters(newFilters);
-    // TODO: Implement actual filtering logic with Supabase data
-    let filtered = mockResources;
+  const fetchUserProfile = async () => {
+    if (!user) return;
     
-    // Apply filters
-    if (newFilters.department) {
-      filtered = filtered.filter(r => r.department === newFilters.department);
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    setUserProfile(data);
+  };
+
+  const fetchResources = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Transform data to match expected format
+      const transformedData = data?.map(resource => ({
+        title: resource.title,
+        description: resource.description,
+        type: resource.resource_type,
+        department: resource.department,
+        year: `${resource.year}${getOrdinalSuffix(resource.year)}`,
+        subject: resource.subject,
+        author: 'Student',
+        likes: resource.likes_count || 0,
+        rating: Number(resource.average_rating) || 0,
+        downloads: resource.download_count || 0,
+        uploadDate: formatDate(resource.created_at),
+        liked: false, // TODO: Check if current user liked this
+        id: resource.id,
+        file_url: resource.file_url
+      })) || [];
+
+      setResources(transformedData);
+      
+      // Apply default filters based on user profile
+      if (userProfile) {
+        const defaultFilters = {
+          department: userProfile.department,
+          year: `${userProfile.year}${getOrdinalSuffix(userProfile.year)}`
+        };
+        applyFilters(transformedData, defaultFilters);
+        setFilters(defaultFilters);
+      } else {
+        setFilteredResources(transformedData);
+      }
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      setFilteredResources([]);
+    } finally {
+      setLoading(false);
     }
-    if (newFilters.year) {
-      filtered = filtered.filter(r => r.year === newFilters.year);
+  };
+
+  const getOrdinalSuffix = (num: number) => {
+    const j = num % 10, k = num % 100;
+    if (j == 1 && k != 11) return "st";
+    if (j == 2 && k != 12) return "nd";
+    if (j == 3 && k != 13) return "rd";
+    return "th";
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+  };
+
+  const applyFilters = (data: any[], filterOptions: any) => {
+    let filtered = data;
+    
+    if (filterOptions.department) {
+      filtered = filtered.filter(r => r.department === filterOptions.department);
     }
-    if (newFilters.type) {
-      filtered = filtered.filter(r => r.type === newFilters.type);
+    if (filterOptions.year) {
+      filtered = filtered.filter(r => r.year === filterOptions.year);
     }
-    if (newFilters.subject) {
-      filtered = filtered.filter(r => r.subject.toLowerCase().includes(newFilters.subject.toLowerCase()));
+    if (filterOptions.type) {
+      filtered = filtered.filter(r => r.type === filterOptions.type);
     }
-    if (newFilters.search) {
+    if (filterOptions.subject) {
+      filtered = filtered.filter(r => r.subject.toLowerCase().includes(filterOptions.subject.toLowerCase()));
+    }
+    if (filterOptions.search) {
       filtered = filtered.filter(r => 
-        r.title.toLowerCase().includes(newFilters.search.toLowerCase()) ||
-        r.description.toLowerCase().includes(newFilters.search.toLowerCase())
+        r.title.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
+        r.description.toLowerCase().includes(filterOptions.search.toLowerCase())
       );
     }
     
     setFilteredResources(filtered);
+  };
+
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
+    applyFilters(resources, newFilters);
   };
 
   const handleSort = (sortType: string) => {
@@ -254,10 +343,23 @@ const Resources = () => {
         )}
 
         {/* Resources Grid */}
-        {filteredResources.length > 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(6).fill(0).map((_, index) => (
+              <Card key={index} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-3 bg-muted rounded mb-4 w-3/4"></div>
+                  <div className="h-3 bg-muted rounded mb-2 w-1/2"></div>
+                  <div className="h-3 bg-muted rounded w-1/3"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredResources.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.map((resource, index) => (
-              <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+              <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
                 <ResourceCard {...resource} />
               </div>
             ))}

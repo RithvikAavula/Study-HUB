@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
@@ -7,6 +7,7 @@ import { FilterSection } from "@/components/FilterSection";
 import { ResourceCard } from "@/components/ResourceCard";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Clock, Star, Upload } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock data for demonstration
 const mockResources = [
@@ -99,12 +100,108 @@ const mockResources = [
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [resources, setResources] = useState<any[]>([]);
+  const [userStats, setUserStats] = useState({
+    totalUploads: 0,
+    totalLikes: 0,
+    totalDownloads: 0
+  });
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+    } else if (user) {
+      fetchResources();
+      fetchUserStats();
     }
   }, [user, loading, navigate]);
+
+  const fetchResources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      
+      const transformedData = data?.map(resource => ({
+        title: resource.title,
+        description: resource.description,
+        type: resource.resource_type,
+        department: resource.department,
+        year: `${resource.year}${getOrdinalSuffix(resource.year)}`,
+        subject: resource.subject,
+        author: 'Student',
+        likes: resource.likes_count || 0,
+        rating: Number(resource.average_rating) || 0,
+        downloads: resource.download_count || 0,
+        uploadDate: formatDate(resource.created_at),
+        liked: false,
+        id: resource.id
+      })) || [];
+
+      setResources(transformedData);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+    }
+  };
+
+  const fetchUserStats = async () => {
+    if (!user) return;
+    
+    try {
+      // Get user's uploads
+      const { count: uploadsCount } = await supabase
+        .from('resources')
+        .select('*', { count: 'exact', head: true })
+        .eq('uploaded_by', user.id);
+
+      // Get total likes on user's resources
+      const { data: likesData } = await supabase
+        .from('resources')
+        .select('likes_count')
+        .eq('uploaded_by', user.id);
+      
+      const totalLikes = likesData?.reduce((sum, item) => sum + (item.likes_count || 0), 0) || 0;
+
+      // Get total downloads on user's resources
+      const { data: downloadsData } = await supabase
+        .from('resources')
+        .select('download_count')
+        .eq('uploaded_by', user.id);
+      
+      const totalDownloads = downloadsData?.reduce((sum, item) => sum + (item.download_count || 0), 0) || 0;
+
+      setUserStats({
+        totalUploads: uploadsCount || 0,
+        totalLikes,
+        totalDownloads
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const getOrdinalSuffix = (num: number) => {
+    const j = num % 10, k = num % 100;
+    if (j == 1 && k != 11) return "st";
+    if (j == 2 && k != 12) return "nd";
+    if (j == 3 && k != 13) return "rd";
+    return "th";
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+  };
 
   if (loading) {
     return (
@@ -184,7 +281,11 @@ const Dashboard = () => {
 
         {/* Resources Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockResources.map((resource, index) => (
+          {resources.length > 0 ? resources.map((resource, index) => (
+            <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+              <ResourceCard {...resource} />
+            </div>
+          )) : mockResources.map((resource, index) => (
             <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
               <ResourceCard {...resource} />
             </div>
