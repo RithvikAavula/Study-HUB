@@ -7,8 +7,11 @@ import { ResourceCard } from '@/components/ResourceCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Filter, SortAsc } from 'lucide-react';
+import { Upload, Filter, SortAsc, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { EmptyState } from '@/components/EmptyState';
+import { SkeletonGrid } from '@/components/SkeletonCard';
 
 // Mock data for demonstration - same as Dashboard
 const mockResources = [
@@ -254,48 +257,55 @@ const Resources = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 lg:py-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Academic Resources</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Academic Resources</h1>
+            <p className="text-muted-foreground text-sm lg:text-base">
               Discover and download study materials shared by your fellow students
             </p>
           </div>
-          <Button onClick={() => navigate('/upload')} className="mt-4 md:mt-0">
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Resource
-          </Button>
+          <div className="flex gap-2 mt-4 md:mt-0">
+            <Button variant="outline" size="sm" onClick={fetchResources} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={() => navigate('/upload')} size="sm" className="lg:size-default">
+              <Upload className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Upload Resource</span>
+              <span className="sm:hidden">Upload</span>
+            </Button>
+          </div>
         </div>
 
         {/* Stats Bar */}
-        <Card className="mb-6">
-          <CardContent className="py-4">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div className="flex flex-wrap gap-4">
+        <Card className="mb-4 lg:mb-6">
+          <CardContent className="py-3 lg:py-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="grid grid-cols-3 gap-4 lg:gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">{filteredResources.length}</div>
-                  <div className="text-sm text-muted-foreground">Resources Found</div>
+                  <div className="text-lg lg:text-2xl font-bold text-foreground">{filteredResources.length}</div>
+                  <div className="text-xs lg:text-sm text-muted-foreground">Resources Found</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-lg lg:text-2xl font-bold text-foreground">
                     {filteredResources.reduce((acc, r) => acc + r.downloads, 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground">Total Downloads</div>
+                  <div className="text-xs lg:text-sm text-muted-foreground">Total Downloads</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">
-                    {(filteredResources.reduce((acc, r) => acc + r.rating, 0) / filteredResources.length).toFixed(1)}
+                  <div className="text-lg lg:text-2xl font-bold text-foreground">
+                    {filteredResources.length > 0 ? (filteredResources.reduce((acc, r) => acc + r.rating, 0) / filteredResources.length).toFixed(1) : '0.0'}
                   </div>
-                  <div className="text-sm text-muted-foreground">Average Rating</div>
+                  <div className="text-xs lg:text-sm text-muted-foreground">Average Rating</div>
                 </div>
               </div>
               
               {/* Sort Options */}
-              <div className="flex items-center gap-2">
-                <SortAsc className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Sort by:</span>
+              <div className="flex items-center gap-2 overflow-x-auto">
+                <SortAsc className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</span>
                 <div className="flex gap-1">
                   {[
                     { key: 'recent', label: 'Recent' },
@@ -306,7 +316,7 @@ const Resources = () => {
                     <Badge
                       key={sort.key}
                       variant={sortBy === sort.key ? "default" : "outline"}
-                      className="cursor-pointer"
+                      className="cursor-pointer whitespace-nowrap hover:scale-105 transition-transform"
                       onClick={() => handleSort(sort.key)}
                     >
                       {sort.label}
@@ -319,7 +329,7 @@ const Resources = () => {
         </Card>
 
         {/* Filters */}
-        <div className="mb-8">
+        <div className="mb-6 lg:mb-8">
           <FilterSection onFiltersChange={handleFiltersChange} />
         </div>
 
@@ -344,20 +354,9 @@ const Resources = () => {
 
         {/* Resources Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array(6).fill(0).map((_, index) => (
-              <Card key={index} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-4 bg-muted rounded mb-2"></div>
-                  <div className="h-3 bg-muted rounded mb-4 w-3/4"></div>
-                  <div className="h-3 bg-muted rounded mb-2 w-1/2"></div>
-                  <div className="h-3 bg-muted rounded w-1/3"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <SkeletonGrid count={6} />
         ) : filteredResources.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {filteredResources.map((resource, index) => (
               <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
                 <ResourceCard {...resource} />
@@ -365,22 +364,19 @@ const Resources = () => {
             ))}
           </div>
         ) : (
-          <Card className="p-12 text-center">
-            <div className="text-muted-foreground mb-4">
-              <Filter className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No Resources Found</h3>
-              <p>Try adjusting your filters or search terms to find resources.</p>
-            </div>
-            <Button variant="outline" onClick={() => handleFiltersChange({})}>
-              Clear All Filters
-            </Button>
-          </Card>
+          <EmptyState
+            icon={Filter}
+            title="No Resources Found"
+            description="Try adjusting your filters or search terms to find resources. You can also upload your own resources to help the community!"
+            actionLabel="Clear All Filters"
+            onAction={() => handleFiltersChange({})}
+          />
         )}
 
         {/* Load More */}
         {filteredResources.length > 0 && filteredResources.length >= 6 && (
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg" className="px-8">
+          <div className="text-center mt-8 lg:mt-12">
+            <Button variant="outline" size="lg" className="px-6 lg:px-8">
               Load More Resources
             </Button>
           </div>
