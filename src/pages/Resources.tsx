@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonGrid } from '@/components/SkeletonCard';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 // Mock data for demonstration - same as Dashboard
 const mockResources = [
@@ -257,7 +258,8 @@ const Resources = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container mx-auto px-4 py-4 lg:py-8">
+      <PullToRefresh onRefresh={fetchResources}>
+        <div className="container mx-auto px-4 py-4 lg:py-8 touch-manipulation">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8">
           <div>
@@ -381,7 +383,8 @@ const Resources = () => {
             </Button>
           </div>
         )}
-      </div>
+        </div>
+      </PullToRefresh>
     </div>
   );
 };
