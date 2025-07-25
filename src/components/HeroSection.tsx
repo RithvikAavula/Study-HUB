@@ -2,7 +2,15 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Users, Star } from "lucide-react";
 import heroImage from "@/assets/hero-academic.jpg";
 
-export const HeroSection = () => {
+interface HeroSectionProps {
+  stats?: {
+    totalResources: number;
+    totalUsers: number;
+    totalDepartments: number;
+  };
+}
+
+export const HeroSection = ({ stats }: HeroSectionProps) => {
   return (
     <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-primary/5 overflow-hidden">
       {/* Background Image */}
@@ -55,12 +63,11 @@ export const HeroSection = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
               {[
-                { label: "Resources Shared", value: "50K+" },
-                { label: "Active Students", value: "10K+" },
-                { label: "Universities", value: "100+" },
-                { label: "Departments", value: "15+" },
+                { label: "Resources Shared", value: stats ? `${Math.floor(stats.totalResources / 1000)}K+` : "15K+" },
+                { label: "Active Students", value: stats ? `${Math.floor(stats.totalUsers / 1000)}K+` : "5K+" },
+                { label: "Departments", value: stats ? `${stats.totalDepartments}+` : "15+" },
               ].map((stat, index) => (
                 <div key={index} className="text-center animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className="text-2xl md:text-3xl font-bold text-primary mb-1">
