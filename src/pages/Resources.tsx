@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/Header';
 import { FilterSection } from '@/components/FilterSection';
 import { ResourceCard } from '@/components/ResourceCard';
+import { ResourcePreview } from '@/components/ResourcePreview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonGrid } from '@/components/SkeletonCard';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for demonstration - same as Dashboard
 const mockResources = [
@@ -111,6 +113,9 @@ const Resources = () => {
   const [filteredResources, setFilteredResources] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [previewResource, setPreviewResource] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!user) {
@@ -142,6 +147,16 @@ const Resources = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Fetch author names separately
+      const profileIds = data?.map(r => r.uploaded_by).filter(Boolean) || [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', profileIds);
+
+      // Create a map for quick lookup
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
       
       // Transform data to match expected format
       const transformedData = data?.map(resource => ({
@@ -151,14 +166,15 @@ const Resources = () => {
         department: resource.department,
         year: `${resource.year}${getOrdinalSuffix(resource.year)}`,
         subject: resource.subject,
-        author: 'Student',
+        author: profileMap.get(resource.uploaded_by) || 'Anonymous',
         likes: resource.likes_count || 0,
         rating: Number(resource.average_rating) || 0,
         downloads: resource.download_count || 0,
         uploadDate: formatDate(resource.created_at),
         liked: false, // TODO: Check if current user liked this
         id: resource.id,
-        file_url: resource.file_url
+        file_url: resource.file_url,
+        resource_type: resource.resource_type
       })) || [];
 
       setResources(transformedData);
@@ -250,6 +266,98 @@ const Resources = () => {
     }
     
     setFilteredResources(sorted);
+  };
+
+  const handlePreview = (resource: any) => {
+    setPreviewResource(resource);
+    setIsPreviewOpen(true);
+  };
+
+  const handleDownload = async (resource: any) => {
+    try {
+      if (resource.file_url) {
+        // Create a link element and trigger download
+        const link = document.createElement('a');
+        link.href = resource.file_url;
+        link.download = resource.title || 'download';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Update download count
+        await supabase
+          .from('resources')
+          .update({ download_count: (resource.downloads || 0) + 1 })
+          .eq('id', resource.id);
+
+        toast({
+          title: "Download started",
+          description: `Downloading ${resource.title}`,
+        });
+
+        // Refresh resources to update download count
+        fetchResources();
+      }
+    } catch (error) {
+      console.error('Error downloading resource:', error);
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading the file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLike = async (resourceId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user already liked this resource
+      const { data: existingLike } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('resource_id', resourceId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingLike) {
+        // Unlike
+        await supabase
+          .from('likes')
+          .delete()
+          .eq('resource_id', resourceId)
+          .eq('user_id', user.id);
+        
+        toast({
+          title: "Removed like",
+          description: "You unliked this resource",
+        });
+      } else {
+        // Like
+        await supabase
+          .from('likes')
+          .insert({
+            resource_id: resourceId,
+            user_id: user.id
+          });
+        
+        toast({
+          title: "Liked!",
+          description: "You liked this resource",
+        });
+      }
+
+      // Refresh resources to update like count
+      fetchResources();
+    } catch (error) {
+      console.error('Error handling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!user) return null;
@@ -361,7 +469,12 @@ const Resources = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {filteredResources.map((resource, index) => (
               <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <ResourceCard {...resource} />
+                <ResourceCard 
+                  {...resource} 
+                  onPreview={handlePreview}
+                  onDownload={handleDownload}
+                  onLike={handleLike}
+                />
               </div>
             ))}
           </div>
@@ -385,6 +498,13 @@ const Resources = () => {
         )}
         </div>
       </PullToRefresh>
+      
+      <ResourcePreview
+        resource={previewResource}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        onDownload={handleDownload}
+      />
     </div>
   );
 };

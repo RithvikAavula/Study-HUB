@@ -26,6 +26,11 @@ interface ResourceCardProps {
   downloads: number;
   uploadDate: string;
   liked?: boolean;
+  id?: string;
+  file_url?: string;
+  onPreview?: (resource: any) => void;
+  onDownload?: (resource: any) => void;
+  onLike?: (resourceId: string) => void;
 }
 
 const typeIcons = {
@@ -56,7 +61,12 @@ export const ResourceCard = ({
   rating,
   downloads,
   uploadDate,
-  liked = false
+  liked = false,
+  id,
+  file_url,
+  onPreview,
+  onDownload,
+  onLike
 }: ResourceCardProps) => {
   const TypeIcon = typeIcons[type];
 
@@ -125,17 +135,32 @@ export const ResourceCard = ({
 
         {/* Actions */}
         <div className="flex gap-2 pt-3 border-t border-border/50">
-          <Button variant="outline" size="sm" className="flex-1 text-xs lg:text-sm h-8 lg:h-9">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 text-xs lg:text-sm h-8 lg:h-9"
+            onClick={() => onPreview?.({ id, title, file_url, type })}
+          >
             <Eye className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
             <span className="hidden sm:inline">Preview</span>
             <span className="sm:hidden">View</span>
           </Button>
-          <Button variant="default" size="sm" className="flex-1 text-xs lg:text-sm h-8 lg:h-9">
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="flex-1 text-xs lg:text-sm h-8 lg:h-9"
+            onClick={() => onDownload?.({ id, title, file_url, type })}
+          >
             <Download className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
             <span className="hidden sm:inline">Download</span>
             <span className="sm:hidden">Get</span>
           </Button>
-          <Button variant="ghost" size="sm" className="px-2 lg:px-3 h-8 lg:h-9 active:scale-95 transition-transform">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="px-2 lg:px-3 h-8 lg:h-9 active:scale-95 transition-transform"
+            onClick={() => id && onLike?.(id)}
+          >
             <Heart className={`h-3 w-3 lg:h-4 lg:w-4 ${liked ? 'text-red-500 fill-current' : ''}`} />
           </Button>
         </div>
