@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, X } from "lucide-react";
+import { Download, X, ExternalLink } from "lucide-react";
 
 interface ResourcePreviewProps {
   resource: {
@@ -34,6 +34,12 @@ export const ResourcePreview = ({ resource, isOpen, onClose, onDownload }: Resou
     setTimeout(() => setLoading(false), 1000);
   };
 
+  const handleOpenInNewTab = () => {
+    if (resource.file_url) {
+      window.open(resource.file_url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
@@ -43,6 +49,14 @@ export const ResourcePreview = ({ resource, isOpen, onClose, onDownload }: Resou
               {resource.title}
             </DialogTitle>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenInNewTab}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in Tab
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -81,15 +95,25 @@ export const ResourcePreview = ({ resource, isOpen, onClose, onDownload }: Resou
               </div>
             </div>
           ) : isPDF ? (
-            <div className="w-full h-[70vh]">
-              <iframe
-                src={resource.file_url}
-                title={resource.title}
-                className="w-full h-full border rounded-lg"
-                onError={() => {
-                  console.log("PDF preview failed");
-                }}
-              />
+            <div className="space-y-4">
+              <div className="text-center p-8 bg-muted/50 rounded-lg">
+                <div className="mb-4">
+                  <p className="text-lg mb-2">PDF Preview</p>
+                  <p className="text-sm text-muted-foreground">
+                    Click "Open in Tab" to view the PDF in a new browser tab, or download it to your device.
+                  </p>
+                </div>
+                <div className="flex gap-3 justify-center">
+                  <Button variant="default" onClick={handleOpenInNewTab}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open PDF in New Tab
+                  </Button>
+                  <Button variant="outline" onClick={handleDownload}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center p-12 text-muted-foreground">
@@ -97,10 +121,16 @@ export const ResourcePreview = ({ resource, isOpen, onClose, onDownload }: Resou
                 <p className="text-lg mb-2">Preview not available</p>
                 <p className="text-sm">This file type cannot be previewed in the browser.</p>
               </div>
-              <Button variant="outline" onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-2" />
-                Download to view
-              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button variant="default" onClick={handleOpenInNewTab}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open in New Tab
+                </Button>
+                <Button variant="outline" onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download to view
+                </Button>
+              </div>
             </div>
           )}
         </div>
