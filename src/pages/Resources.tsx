@@ -427,17 +427,22 @@ const Resources = () => {
   const handleRate = async (resourceId: string, rating: number) => {
     if (!user) return;
     try {
-      // Upsert rating
-      await supabase
+      // Optimistic UI update for user's own rating
+      setResources(prev => prev.map(r => r.id === resourceId ? { ...r, userRating: rating } : r));
+      setFilteredResources(prev => prev.map(r => r.id === resourceId ? { ...r, userRating: rating } : r));
+
+      // Single-call upsert on (user_id, resource_id)
+      const { error } = await supabase
         .from('ratings')
-        .upsert([
-          { resource_id: resourceId, user_id: user.id, rating }
-        ], { onConflict: 'user_id,resource_id' });
-      // Refresh resources to update average and user rating
+        .upsert({ resource_id: resourceId, user_id: user.id, rating }, { onConflict: 'user_id,resource_id' });
+      if (error) throw error;
+
+      // Refresh to update averages, counts, etc.
       fetchResources();
       toast({ title: 'Thank you for rating!' });
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to rate resource', variant: 'destructive' });
+    } catch (error: any) {
+      const message = error?.message || 'Failed to rate resource';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 

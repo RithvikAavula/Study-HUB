@@ -123,7 +123,11 @@ export const ResourceCard = ({
                   <Star
                     key={star}
                     className={`h-3 w-3 lg:h-4 lg:w-4 cursor-pointer ${userRating >= star ? 'text-yellow-400' : 'text-muted-foreground'}`}
-                    onClick={() => id && onRate?.(id, star)}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); id && onRate?.(id, star); }}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                     title={userRating ? `Your rating: ${userRating}` : `Rate ${star} star${star > 1 ? 's' : ''}`}
                     fill={userRating >= star ? '#facc15' : 'none'}
                     strokeWidth={userRating >= star ? 0 : 2}
