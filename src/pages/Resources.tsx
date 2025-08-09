@@ -203,7 +203,15 @@ const Resources = () => {
       const transformedData = data?.map(resource => ({
         title: resource.title,
         description: resource.description,
-        type: resource.resource_type,
+        // Normalize DB resource_type to component union expected by ResourceCard
+        type: (
+          resource.resource_type === 'PDFs' ? 'PDFs'
+          : resource.resource_type === 'Images' ? 'Images'
+          : resource.resource_type === 'Previous Papers' ? 'Previous Papers'
+          : resource.resource_type === 'Assignments' ? 'Assignments'
+          : resource.resource_type === 'Notes' ? 'Notes'
+          : 'Others'
+        ),
         department: resource.department,
         year: `${resource.year}${getOrdinalSuffix(resource.year)}`,
         subject: resource.subject,

@@ -16,7 +16,15 @@ const departments = [
   'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI&DS', 'BIOTECH', 'CHEM', 'AEROSPACE'
 ];
 
-const resourceTypes = ['Notes', 'Question Paper', 'Assignment', 'Lab Report', 'Project', 'PDF', 'Image'];
+// Align with DB CHECK constraint values in public.resources.resource_type
+const resourceTypeOptions = [
+  { value: 'Notes', label: 'Notes' },
+  { value: 'Previous Papers', label: 'Previous Papers' },
+  { value: 'Assignments', label: 'Assignments' },
+  { value: 'PDFs', label: 'PDFs' },
+  { value: 'Images', label: 'Images' },
+  { value: 'Others', label: 'Others' },
+];
 
 const Upload = () => {
   const { user } = useAuth();
@@ -50,13 +58,13 @@ const Upload = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // File size validation
-    const maxSize = file.type.startsWith('image/') ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for images, 10MB for others
-    
+    // File size validation (up to 20MB for all supported types)
+    const maxSize = 20 * 1024 * 1024;
+
     if (file.size > maxSize) {
       toast({
         title: "File Too Large",
-        description: `File size should be less than ${file.type.startsWith('image/') ? '5MB' : '10MB'}`,
+        description: "File size should be less than 20MB.",
         variant: "destructive",
       });
       return;
@@ -106,7 +114,11 @@ const Upload = () => {
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('academic-resources')
-        .upload(fileName, selectedFile);
+        .upload(fileName, selectedFile, {
+          contentType: selectedFile.type,
+          cacheControl: '3600',
+          upsert: false,
+        });
       
       if (uploadError) throw uploadError;
       
@@ -116,22 +128,29 @@ const Upload = () => {
         .getPublicUrl(fileName);
       
       // Save resource metadata to database
+      const yearNumber = parseInt(formData.year);
+      const resourceTypeValue = resourceTypeOptions.find(o => o.value === formData.resourceType)?.value || 'Others';
+
       const { error: dbError } = await supabase
         .from('resources')
         .insert({
           title: formData.title,
           description: formData.description,
           department: formData.department,
-          year: parseInt(formData.year),
+          year: yearNumber,
           subject: formData.subject,
-          resource_type: formData.resourceType,
+          resource_type: resourceTypeValue,
           section: formData.section,
           file_url: publicUrl,
           file_type: selectedFile.type,
           uploaded_by: user!.id
         });
       
-      if (dbError) throw dbError;
+      if (dbError) {
+        // Roll back uploaded file to avoid orphaned objects
+        await supabase.storage.from('academic-resources').remove([fileName]);
+        throw dbError;
+      }
       
       toast({
         title: "Resource Uploaded Successfully!",
@@ -154,9 +173,10 @@ const Upload = () => {
       navigate('/resources');
     } catch (error) {
       console.error('Upload error:', error);
+      const message = (error as any)?.message || 'Something went wrong. Please try again.';
       toast({
         title: "Upload Failed",
-        description: "Something went wrong. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -272,8 +292,8 @@ const Upload = () => {
                           <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {resourceTypes.map((type) => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          {resourceTypeOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -303,7 +323,7 @@ const Upload = () => {
                               Drag and drop your file here, or click to browse
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Supports: PDF, DOC, TXT, JPG, PNG (Max: 10MB for docs, 5MB for images)
+                              Supports: PDF, DOC, TXT, JPG, PNG (Max: 20MB)
                             </p>
                           </div>
                           <Input
@@ -356,8 +376,7 @@ const Upload = () => {
                 <div>
                   <h4 className="font-medium text-sm mb-2">File Requirements:</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• PDFs, Documents: Max 10MB</li>
-                    <li>• Images: Max 5MB</li>
+                    <li>• PDFs, Documents, Images: Max 20MB</li>
                     <li>• Clear, readable content</li>
                   </ul>
                 </div>

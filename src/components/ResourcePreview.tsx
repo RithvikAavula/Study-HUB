@@ -25,8 +25,8 @@ export const ResourcePreview = ({ resource, isOpen, onClose, onDownload }: Resou
 
   if (!resource) return null;
 
-  const isImage = resource.type === "Image" || resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-  const isPDF = resource.type === "PDF" || resource.file_url?.match(/\.pdf$/i);
+  const isImage = resource.type === "Images" || resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+  const isPDF = resource.type === "PDFs" || resource.file_url?.match(/\.pdf$/i);
 
   const handleDownload = () => {
     setLoading(true);

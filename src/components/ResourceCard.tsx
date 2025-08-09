@@ -16,7 +16,7 @@ import {
 interface ResourceCardProps {
   title: string;
   description: string;
-  type: "Notes" | "PDF" | "Image" | "Question Paper" | "Assignment";
+  type: "Notes" | "PDFs" | "Images" | "Previous Papers" | "Assignments" | "Others";
   department: string;
   year: string;
   subject: string;
@@ -36,20 +36,22 @@ interface ResourceCardProps {
   authorLikes?: number;
 }
 
-const typeIcons = {
+const typeIcons: Record<ResourceCardProps["type"], any> = {
   "Notes": FileText,
-  "PDF": FileText,
-  "Image": Image,
-  "Question Paper": FileText,
-  "Assignment": FileText,
+  "PDFs": FileText,
+  "Images": Image,
+  "Previous Papers": FileText,
+  "Assignments": FileText,
+  "Others": FileText,
 };
 
-const typeColors = {
+const typeColors: Record<ResourceCardProps["type"], string> = {
   "Notes": "bg-academic-blue/10 text-academic-blue border-academic-blue/20",
-  "PDF": "bg-academic-purple/10 text-academic-purple border-academic-purple/20",
-  "Image": "bg-academic-green/10 text-academic-green border-academic-green/20",
-  "Question Paper": "bg-academic-orange/10 text-academic-orange border-academic-orange/20",
-  "Assignment": "bg-primary/10 text-primary border-primary/20",
+  "PDFs": "bg-academic-purple/10 text-academic-purple border-academic-purple/20",
+  "Images": "bg-academic-green/10 text-academic-green border-academic-green/20",
+  "Previous Papers": "bg-academic-orange/10 text-academic-orange border-academic-orange/20",
+  "Assignments": "bg-primary/10 text-primary border-primary/20",
+  "Others": "bg-muted text-muted-foreground border-border/50",
 };
 
 export const ResourceCard = ({
@@ -74,7 +76,7 @@ export const ResourceCard = ({
   onLike,
   authorLikes = 0
 }: ResourceCardProps) => {
-  const TypeIcon = typeIcons[type];
+  const TypeIcon = typeIcons[type] ?? FileText;
 
   // Star rating UI
   const stars = [1, 2, 3, 4, 5];
