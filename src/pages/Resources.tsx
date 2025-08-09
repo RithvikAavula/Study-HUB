@@ -428,11 +428,11 @@ const Resources = () => {
     if (!user) return;
     try {
       // Upsert rating
-      await supabase.from('ratings').upsert({
-        resource_id: resourceId,
-        user_id: user.id,
-        rating
-      }, { onConflict: ['resource_id', 'user_id'] });
+      await supabase
+        .from('ratings')
+        .upsert([
+          { resource_id: resourceId, user_id: user.id, rating }
+        ], { onConflict: 'user_id,resource_id' });
       // Refresh resources to update average and user rating
       fetchResources();
       toast({ title: 'Thank you for rating!' });
