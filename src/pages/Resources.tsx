@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { FilterSection } from '@/components/FilterSection';
 import { ResourceCard } from '@/components/ResourceCard';
 import { ResourcePreview } from '@/components/ResourcePreview';
+import { ResourceEditDialog } from '@/components/ResourceEditDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -115,6 +116,8 @@ const Resources = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [previewResource, setPreviewResource] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [editResource, setEditResource] = useState<any>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const { toast } = useToast();
   const [userRatings, setUserRatings] = useState({});
   const [resetSignal, setResetSignal] = useState(0);
@@ -227,6 +230,8 @@ const Resources = () => {
         file_url: resource.file_url,
         resource_type: resource.resource_type,
         authorLikes: authorLikesMap.get(resource.uploaded_by) || 0,
+        uploaded_by: resource.uploaded_by,
+        canEdit: user && resource.uploaded_by === user.id,
       })) || [];
 
       setResources(transformedData);
@@ -370,6 +375,64 @@ const Resources = () => {
         description: "There was an error downloading the file. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleEditOpen = (resource: any) => {
+    setEditResource(resource);
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (updates: any) => {
+    if (!editResource?.id) return;
+    try {
+      const { error } = await supabase
+        .from('resources')
+        .update(updates)
+        .eq('id', editResource.id);
+      if (error) throw error;
+      toast({ title: 'Resource updated', description: 'Your changes have been saved.' });
+      await fetchResources();
+    } catch (error: any) {
+      const message = error?.message || 'Failed to update resource';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
+    } finally {
+      setIsEditOpen(false);
+      setEditResource(null);
+    }
+  };
+
+  const extractStoragePathFromPublicUrl = (url: string): string | null => {
+    if (!url) return null;
+    // Example public URL:
+    // https://<proj>.supabase.co/storage/v1/object/public/academic-resources/<filePath>
+    const marker = '/storage/v1/object/public/academic-resources/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.substring(idx + marker.length);
+  };
+
+  const handleDelete = async (resource: any) => {
+    if (!resource?.id) return;
+    const confirmed = window.confirm(`Delete "${resource.title}"? This cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      // Remove storage object if possible
+      const storagePath = extractStoragePathFromPublicUrl(resource.file_url);
+      if (storagePath) {
+        await supabase.storage.from('academic-resources').remove([storagePath]);
+      }
+      // Delete DB row
+      const { error } = await supabase
+        .from('resources')
+        .delete()
+        .eq('id', resource.id);
+      if (error) throw error;
+      toast({ title: 'Resource deleted', description: 'Your upload was removed.' });
+      await fetchResources();
+    } catch (error: any) {
+      const message = error?.message || 'Failed to delete resource';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 
@@ -563,6 +626,9 @@ const Resources = () => {
                   authorLikes={resource.authorLikes}
                   userRating={resource.userRating}
                   onRate={handleRate}
+                  canEdit={resource.canEdit}
+                  onEdit={handleEditOpen}
+                  onDelete={handleDelete}
                 />
               </div>
             ))}
@@ -593,6 +659,13 @@ const Resources = () => {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         onDownload={handleDownload}
+      />
+
+      <ResourceEditDialog
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        resource={editResource}
+        onSubmit={handleEditSubmit}
       />
     </div>
   );

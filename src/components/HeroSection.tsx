@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Users, Star } from "lucide-react";
 import heroImage from "@/assets/hero-academic.jpg";
+import { useNavigate } from "react-router-dom";
 
 interface HeroSectionProps {
   stats?: {
@@ -11,6 +12,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ stats }: HeroSectionProps) => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-primary/5 overflow-hidden">
       {/* Background Image */}
@@ -55,12 +57,22 @@ export const HeroSection = ({ stats }: HeroSectionProps) => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button variant="hero" size="lg" className="text-lg px-8 py-6">
+              <Button
+                variant="hero"
+                size="lg"
+                className="text-lg px-8 py-6"
+                onClick={() => navigate('/resources')}
+              >
                 <BookOpen className="h-5 w-5 mr-2" />
                 Start Exploring
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6 bg-background/80 hover:bg-background">
+              <Button
+                variant="outline"
+                size="lg"
+                className="text-lg px-8 py-6 bg-background/80 hover:bg-background"
+                onClick={() => navigate('/communities')}
+              >
                 <Users className="h-5 w-5 mr-2" />
                 Join Community
               </Button>

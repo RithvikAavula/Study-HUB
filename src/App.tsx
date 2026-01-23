@@ -12,6 +12,10 @@ import Upload from "./pages/Upload";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
+import Communities from "./pages/Communities";
+import CommunityPage from "./pages/Community";
+import CommunityMembers from "./pages/CommunityMembers";
+import CommunityRequests from "./pages/CommunityRequests";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +34,10 @@ const App = () => (
             <Route path="/resources" element={<Resources />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/communities" element={<Communities />} />
+            <Route path="/communities/:id" element={<CommunityPage />} />
+            <Route path="/communities/:id/members" element={<CommunityMembers />} />
+            <Route path="/communities/:id/requests" element={<CommunityRequests />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

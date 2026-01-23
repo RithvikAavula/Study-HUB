@@ -10,7 +10,9 @@ import {
   Star, 
   Eye,
   Calendar,
-  User
+  User,
+  Pencil,
+  Trash
 } from "lucide-react";
 
 interface ResourceCardProps {
@@ -34,6 +36,9 @@ interface ResourceCardProps {
   onDownload?: (resource: any) => void;
   onLike?: (resourceId: string) => void;
   authorLikes?: number;
+  canEdit?: boolean;
+  onEdit?: (resource: any) => void;
+  onDelete?: (resource: any) => void;
 }
 
 const typeIcons: Record<ResourceCardProps["type"], any> = {
@@ -74,7 +79,10 @@ export const ResourceCard = ({
   onPreview,
   onDownload,
   onLike,
-  authorLikes = 0
+  authorLikes = 0,
+  canEdit = false,
+  onEdit,
+  onDelete
 }: ResourceCardProps) => {
   const TypeIcon = typeIcons[type] ?? FileText;
 
@@ -194,6 +202,28 @@ export const ResourceCard = ({
           >
             <Heart className={`h-3 w-3 lg:h-4 lg:w-4 ${liked ? 'text-red-500 fill-current' : ''}`} />
           </Button>
+          {canEdit && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-2 lg:px-3 h-8 lg:h-9"
+                onClick={() => onEdit?.({ id, title, description, department, subject, file_url, type, year })}
+                title="Edit resource"
+              >
+                <Pencil className="h-3 w-3 lg:h-4 lg:w-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="px-2 lg:px-3 h-8 lg:h-9"
+                onClick={() => onDelete?.({ id, title, file_url })}
+                title="Delete resource"
+              >
+                <Trash className="h-3 w-3 lg:h-4 lg:w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
