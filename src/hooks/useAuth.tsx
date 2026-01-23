@@ -45,7 +45,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Ensure we clear local state even if auth event is delayed
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      // Aggressively clear any persisted Supabase auth tokens
+      try {
+        const keys = Object.keys(localStorage);
+        for (const k of keys) {
+          if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+            localStorage.removeItem(k);
+          }
+        }
+      } catch {}
+      setSession(null);
+      setUser(null);
+    }
   };
 
   const value = {

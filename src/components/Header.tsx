@@ -21,6 +21,9 @@ export const Header = () => {
         title: "Signed Out",
         description: "You have been successfully signed out.",
       });
+      // Redirect to auth page to ensure clean state
+      navigate('/auth');
+      setIsMenuOpen(false);
     } catch (error) {
       toast({
         title: "Error",

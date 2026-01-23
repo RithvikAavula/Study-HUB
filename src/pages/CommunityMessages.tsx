@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Send } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
 
 const CommunityMessages: React.FC = () => {
   const { id } = useParams();
@@ -65,6 +65,20 @@ const CommunityMessages: React.FC = () => {
     await fetchProfiles(ids);
   };
 
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('community_messages')
+        .delete()
+        .eq('id', messageId);
+      if (error) throw error;
+      toast({ title: 'Message deleted', description: 'The message was removed.' });
+      await fetchMessages();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to delete message', variant: 'destructive' });
+    }
+  };
+
   const fetchProfiles = async (ids: string[]) => {
     const missing = ids.filter(uid => !(uid in profileMap));
     if (missing.length === 0) return;
@@ -118,8 +132,21 @@ const CommunityMessages: React.FC = () => {
             <div className="font-semibold mb-2">Community Chat</div>
             <div className="space-y-2 max-h-[450px] overflow-auto border rounded p-2 mb-3">
               {messages.map(msg => (
-                <div key={msg.id} className="text-sm">
-                  <span className="text-muted-foreground">{profileMap[msg.user_id] || msg.user_id}:</span> {msg.content}
+                <div key={msg.id} className="text-sm flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-muted-foreground">{profileMap[msg.user_id] || msg.user_id}:</span> {msg.content}
+                  </div>
+                  {(msg.user_id === user!.id || isAdmin) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteMessage(msg.id)}
+                      title="Delete message"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ))}
               {messages.length === 0 && (
