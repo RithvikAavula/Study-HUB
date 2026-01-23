@@ -279,6 +279,7 @@ const CommunityPage: React.FC = () => {
 
         {/* Sub-pages navigation */}
         <div className="flex items-center gap-2 mb-6">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/communities/${id}/messages`)}>Messages</Button>
           <Button variant="outline" size="sm" onClick={() => navigate(`/communities/${id}/members`)}>Members</Button>
           {isAdmin && (
             <Button variant="outline" size="sm" onClick={() => navigate(`/communities/${id}/requests`)}>Requests</Button>

@@ -16,6 +16,7 @@ import Communities from "./pages/Communities";
 import CommunityPage from "./pages/Community";
 import CommunityMembers from "./pages/CommunityMembers";
 import CommunityRequests from "./pages/CommunityRequests";
+import CommunityMessages from "./pages/CommunityMessages";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/communities/:id" element={<CommunityPage />} />
+            <Route path="/communities/:id/messages" element={<CommunityMessages />} />
             <Route path="/communities/:id/members" element={<CommunityMembers />} />
             <Route path="/communities/:id/requests" element={<CommunityRequests />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
