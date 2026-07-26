@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Users, Star } from "lucide-react";
-import heroImage from "@/assets/hero-academic.jpg";
+import { ArrowRight, BookOpen, Users, Sparkles, Zap, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface HeroSectionProps {
@@ -13,96 +12,114 @@ interface HeroSectionProps {
 
 export const HeroSection = ({ stats }: HeroSectionProps) => {
   const navigate = useNavigate();
+
   return (
-    <section className="relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-primary/5 overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src={heroImage} 
-          alt="Students collaborating" 
-          className="w-full h-full object-cover opacity-10"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
-      </div>
+    <section className="relative min-h-[580px] flex items-center justify-center overflow-hidden">
+      {/* Animated background orbs */}
+      <div className="orb w-96 h-96 bg-primary/20 top-[-100px] left-[-100px]" style={{ animationDelay: '0s' }} />
+      <div className="orb w-80 h-80 bg-accent/15 bottom-[-80px] right-[-80px]" style={{ animationDelay: '3s' }} />
+      <div className="orb w-64 h-64 bg-pink-500/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ animationDelay: '6s' }} />
 
-      {/* Content */}
-      <div className="container mx-auto px-4 lg:px-8 z-10">
+      {/* Grid pattern overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: 'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      <div className="container mx-auto px-4 lg:px-8 z-10 py-16">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="animate-fade-in">
-            {/* Badge */}
-            <div className="inline-flex items-center bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Star className="h-4 w-4 mr-2" />
-              {stats?.totalUsers ? (
-                <span>Trusted by {stats.totalUsers.toLocaleString()}+ B.Tech Students</span>
-              ) : (
-                <span>Trusted by 10,000+ B.Tech Students</span>
-              )}
-            </div>
+          {/* Badge */}
+          <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/20 text-sm font-medium text-primary mb-8" style={{ animationDelay: '0.1s' }}>
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>
+              {stats?.totalUsers
+                ? `Trusted by ${stats.totalUsers.toLocaleString()}+ B.Tech Students`
+                : 'The #1 Academic Resource Platform'}
+            </span>
+          </div>
 
-            {/* Main Heading */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
-              Share. Learn.{" "}
-              <span className="bg-gradient-hero bg-clip-text text-transparent">
-                Excel
-              </span>
-              <br />
-              Together
-            </h1>
+          {/* Heading */}
+          <h1 className="animate-fade-in-up text-5xl md:text-7xl font-bold leading-tight mb-6" style={{ animationDelay: '0.2s' }}>
+            Share. Learn.{' '}
+            <span className="gradient-text">Excel</span>
+            <br />
+            <span className="text-foreground/80">Together</span>
+          </h1>
 
-            {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-              The ultimate platform for B.Tech students to share notes, PDFs, previous year papers, 
-              and collaborate on academic resources across all departments and years.
-            </p>
+          {/* Subtitle */}
+          <p className="animate-fade-in-up text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed" style={{ animationDelay: '0.3s' }}>
+            The ultimate platform for B.Tech students to share notes, PDFs, previous year papers,
+            and collaborate across all departments and years.
+          </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button
-                variant="hero"
-                size="lg"
-                className="text-lg px-8 py-6"
-                onClick={() => navigate('/resources')}
+          {/* CTA Buttons */}
+          <div className="animate-fade-in-up flex flex-col sm:flex-row gap-4 justify-center mb-16" style={{ animationDelay: '0.4s' }}>
+            <Button
+              size="lg"
+              className="text-base px-8 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 hover:-translate-y-0.5"
+              onClick={() => navigate('/resources')}
+            >
+              <BookOpen className="h-5 w-5 mr-2" />
+              Start Exploring
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-base px-8 py-6 glass border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 hover:-translate-y-0.5"
+              onClick={() => navigate('/communities')}
+            >
+              <Users className="h-5 w-5 mr-2" />
+              Join Community
+            </Button>
+          </div>
+
+          {/* Stats */}
+          <div className="animate-fade-in-up grid grid-cols-3 gap-4 max-w-2xl mx-auto" style={{ animationDelay: '0.5s' }}>
+            {[
+              {
+                icon: BookOpen,
+                value: stats ? `${stats.totalResources.toLocaleString()}+` : '15,000+',
+                label: 'Resources Shared',
+                color: 'text-primary',
+                bg: 'bg-primary/10',
+              },
+              {
+                icon: Users,
+                value: stats ? `${stats.totalUsers.toLocaleString()}+` : '5,000+',
+                label: 'Active Students',
+                color: 'text-accent',
+                bg: 'bg-accent/10',
+              },
+              {
+                icon: TrendingUp,
+                value: stats ? `${stats.totalDepartments}+` : '15+',
+                label: 'Departments',
+                color: 'text-emerald-400',
+                bg: 'bg-emerald-400/10',
+              },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="glass rounded-2xl p-4 border border-border/40 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 group"
+                style={{ animationDelay: `${0.5 + i * 0.1}s` }}
               >
-                <BookOpen className="h-5 w-5 mr-2" />
-                Start Exploring
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="text-lg px-8 py-6 bg-background/80 hover:bg-background"
-                onClick={() => navigate('/communities')}
-              >
-                <Users className="h-5 w-5 mr-2" />
-                Join Community
-              </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-              {[
-                { label: "Resources Shared", value: stats ? stats.totalResources.toLocaleString() : "15,000+" },
-                { label: "Active Students", value: stats ? stats.totalUsers.toLocaleString() : "5,000+" },
-                { label: "Departments", value: stats ? `${stats.totalDepartments}+` : "15+" },
-              ].map((stat, index) => (
-                <div key={index} className="text-center animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                  <div className="text-2xl md:text-3xl font-bold text-primary mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {stat.label}
-                  </div>
+                <div className={`inline-flex p-2 rounded-xl ${stat.bg} mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
-              ))}
-            </div>
+                <div className={`text-2xl md:text-3xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Decorative Elements */}
-      <div className="absolute top-20 left-10 w-20 h-20 bg-academic-blue/20 rounded-full blur-xl animate-pulse" />
-      <div className="absolute bottom-32 right-16 w-32 h-32 bg-academic-purple/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: "1s" }} />
-      <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-academic-green/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: "2s" }} />
+      {/* Bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 };

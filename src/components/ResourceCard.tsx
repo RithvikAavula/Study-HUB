@@ -2,17 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  FileText, 
-  Image, 
-  Download, 
-  Heart, 
-  Star, 
-  Eye,
-  Calendar,
-  User,
-  Pencil,
-  Trash
+import {
+  FileText, Image, Download, Heart, Star, Eye, Calendar, Pencil, Trash
 } from "lucide-react";
 
 interface ResourceCardProps {
@@ -24,8 +15,8 @@ interface ResourceCardProps {
   subject: string;
   author: string;
   likes: number;
-  rating: number; // average rating
-  userRating?: number; // user's own rating
+  rating: number;
+  userRating?: number;
   onRate?: (resourceId: string, rating: number) => void;
   downloads: number;
   uploadDate: string;
@@ -41,191 +32,157 @@ interface ResourceCardProps {
   onDelete?: (resource: any) => void;
 }
 
-const typeIcons: Record<ResourceCardProps["type"], any> = {
-  "Notes": FileText,
-  "PDFs": FileText,
-  "Images": Image,
-  "Previous Papers": FileText,
-  "Assignments": FileText,
-  "Others": FileText,
-};
-
-const typeColors: Record<ResourceCardProps["type"], string> = {
-  "Notes": "bg-academic-blue/10 text-academic-blue border-academic-blue/20",
-  "PDFs": "bg-academic-purple/10 text-academic-purple border-academic-purple/20",
-  "Images": "bg-academic-green/10 text-academic-green border-academic-green/20",
-  "Previous Papers": "bg-academic-orange/10 text-academic-orange border-academic-orange/20",
-  "Assignments": "bg-primary/10 text-primary border-primary/20",
-  "Others": "bg-muted text-muted-foreground border-border/50",
+const typeConfig: Record<ResourceCardProps["type"], { icon: any; gradient: string; badge: string }> = {
+  "Notes":           { icon: FileText, gradient: "from-blue-500/20 to-cyan-500/20",   badge: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
+  "PDFs":            { icon: FileText, gradient: "from-purple-500/20 to-pink-500/20", badge: "bg-purple-500/15 text-purple-400 border-purple-500/20" },
+  "Images":          { icon: Image,    gradient: "from-green-500/20 to-emerald-500/20", badge: "bg-green-500/15 text-green-400 border-green-500/20" },
+  "Previous Papers": { icon: FileText, gradient: "from-orange-500/20 to-amber-500/20", badge: "bg-orange-500/15 text-orange-400 border-orange-500/20" },
+  "Assignments":     { icon: FileText, gradient: "from-primary/20 to-accent/20",      badge: "bg-primary/15 text-primary border-primary/20" },
+  "Others":          { icon: FileText, gradient: "from-muted/20 to-muted/10",         badge: "bg-muted/30 text-muted-foreground border-border/30" },
 };
 
 export const ResourceCard = ({
-  title,
-  description,
-  type,
-  department,
-  year,
-  subject,
-  author,
-  likes,
-  rating,
-  userRating = 0,
-  onRate,
-  downloads,
-  uploadDate,
-  liked = false,
-  id,
-  file_url,
-  onPreview,
-  onDownload,
-  onLike,
-  authorLikes = 0,
-  canEdit = false,
-  onEdit,
-  onDelete
+  title, description, type, department, year, subject, author,
+  likes, rating, userRating = 0, onRate, downloads, uploadDate,
+  liked = false, id, file_url, onPreview, onDownload, onLike,
+  authorLikes = 0, canEdit = false, onEdit, onDelete,
 }: ResourceCardProps) => {
-  const TypeIcon = typeIcons[type] ?? FileText;
-
-  // Star rating UI
-  const stars = [1, 2, 3, 4, 5];
+  const config = typeConfig[type] ?? typeConfig["Others"];
+  const TypeIcon = config.icon;
 
   return (
-    <Card className="group hover:shadow-card transition-all duration-300 hover:-translate-y-1 bg-gradient-card border-border/50 cursor-pointer active:scale-[0.98]">
-      <CardContent className="p-4 lg:p-6">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-3 lg:mb-4">
-          <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-            <TypeIcon className="h-4 w-4 lg:h-5 lg:w-5 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 text-sm lg:text-base leading-tight">
-              {title}
-            </h3>
-            <p className="text-xs lg:text-sm text-muted-foreground line-clamp-2 mt-1">
-              {description}
-            </p>
-          </div>
-        </div>
+    <div className="group relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5 cursor-pointer">
+      {/* Gradient border glow on hover */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/0 to-accent/0 group-hover:from-primary/20 group-hover:to-accent/20 transition-all duration-300 -z-10 blur-sm" />
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 lg:gap-2 mb-3 lg:mb-4">
-          <Badge variant="outline" className={`${typeColors[type]} text-xs`}>
-            {type}
-          </Badge>
-          <Badge variant="secondary" className="text-xs">{department}</Badge>
-          <Badge variant="secondary" className="text-xs">{year}</Badge>
-          <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{subject}</Badge>
-        </div>
+      <div className="glass rounded-2xl border border-border/40 group-hover:border-primary/30 transition-all duration-300 overflow-hidden">
+        {/* Top gradient strip */}
+        <div className={`h-1 w-full bg-gradient-to-r ${config.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-300`} />
 
-        {/* Stats */}
-        <div className="flex items-center justify-between text-xs lg:text-sm text-muted-foreground mb-3 lg:mb-4">
-          <div className="flex items-center gap-2 lg:gap-4">
+        <div className="p-5">
+          {/* Header */}
+          <div className="flex items-start gap-3 mb-4">
+            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${config.gradient} flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+              <TypeIcon className="h-4 w-4 text-foreground/80" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2 text-sm leading-snug mb-1">
+                {title}
+              </h3>
+              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                {description}
+              </p>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            <Badge variant="outline" className={`${config.badge} text-xs px-2 py-0.5 font-medium`}>
+              {type}
+            </Badge>
+            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-muted/40 border-border/40 text-muted-foreground">
+              {department}
+            </Badge>
+            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-muted/40 border-border/40 text-muted-foreground">
+              {year}
+            </Badge>
+            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-muted/40 border-border/40 text-muted-foreground hidden sm:inline-flex">
+              {subject}
+            </Badge>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
             <div className="flex items-center gap-1">
-              <Heart className={`h-3 w-3 lg:h-4 lg:w-4 ${liked ? 'text-red-500 fill-current' : ''}`} />
+              <Heart className={`h-3.5 w-3.5 ${liked ? 'text-red-400 fill-red-400' : ''}`} />
               <span>{likes}</span>
             </div>
-            {/* Rating: average and user */}
             <div className="flex items-center gap-1">
-              <span className="flex items-center">
-                {stars.map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-3 w-3 lg:h-4 lg:w-4 cursor-pointer ${userRating >= star ? 'text-yellow-400' : 'text-muted-foreground'}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); id && onRate?.(id, star); }}
-                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                    title={userRating ? `Your rating: ${userRating}` : `Rate ${star} star${star > 1 ? 's' : ''}`}
-                    fill={userRating >= star ? '#facc15' : 'none'}
-                    strokeWidth={userRating >= star ? 0 : 2}
-                  />
-                ))}
-              </span>
-              <span className="ml-1">{rating.toFixed(1)}</span>
+              {[1,2,3,4,5].map(star => (
+                <Star
+                  key={star}
+                  className={`h-3 w-3 cursor-pointer transition-transform hover:scale-125 ${userRating >= star ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/40'}`}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); id && onRate?.(id, star); }}
+                />
+              ))}
+              <span className="ml-0.5">{rating.toFixed(1)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Download className="h-3 w-3 lg:h-4 lg:w-4" />
+              <Download className="h-3.5 w-3.5" />
               <span>{downloads}</span>
             </div>
           </div>
-        </div>
 
-        {/* Author & Date */}
-        <div className="flex items-center justify-between mb-3 lg:mb-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <Avatar className="h-5 w-5 lg:h-6 lg:w-6 flex-shrink-0">
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                {author.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs lg:text-sm text-muted-foreground truncate">{author}</span>
-            <span className="flex items-center gap-1 text-xs text-academic-blue ml-2" title="Total likes on author's uploads">
-              <Heart className="h-3 w-3 text-red-500" />
-              {authorLikes}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-            <Calendar className="h-3 w-3" />
-            <span className="hidden sm:inline">{uploadDate}</span>
-            <span className="sm:hidden">{uploadDate.split(' ')[0]}</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-3 border-t border-border/50">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1 text-xs lg:text-sm h-8 lg:h-9"
-            onClick={() => onPreview?.({ id, title, file_url, type })}
-          >
-            <Eye className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-            <span className="hidden sm:inline">Preview</span>
-            <span className="sm:hidden">View</span>
-          </Button>
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="flex-1 text-xs lg:text-sm h-8 lg:h-9"
-            onClick={() => onDownload?.({ id, title, file_url, type })}
-          >
-            <Download className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-            <span className="hidden sm:inline">Download</span>
-            <span className="sm:hidden">Get</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="px-2 lg:px-3 h-8 lg:h-9 active:scale-95 transition-transform"
-            onClick={() => id && onLike?.(id)}
-          >
-            <Heart className={`h-3 w-3 lg:h-4 lg:w-4 ${liked ? 'text-red-500 fill-current' : ''}`} />
-          </Button>
-          {canEdit && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="px-2 lg:px-3 h-8 lg:h-9"
-                onClick={() => onEdit?.({ id, title, description, department, subject, file_url, type, year })}
-                title="Edit resource"
-              >
-                <Pencil className="h-3 w-3 lg:h-4 lg:w-4" />
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="px-2 lg:px-3 h-8 lg:h-9"
-                onClick={() => onDelete?.({ id, title, file_url })}
-                title="Delete resource"
-              >
-                <Trash className="h-3 w-3 lg:h-4 lg:w-4" />
-              </Button>
+          {/* Author & Date */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-6 w-6 flex-shrink-0">
+                <AvatarFallback className="text-xs bg-gradient-to-br from-primary/30 to-accent/30 text-foreground font-semibold">
+                  {author.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground truncate">{author}</span>
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground/60">
+                <Heart className="h-2.5 w-2.5 text-red-400/60" />
+                {authorLikes}
+              </span>
             </div>
-          )}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground/60 flex-shrink-0">
+              <Calendar className="h-3 w-3" />
+              <span>{uploadDate}</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-3 border-t border-border/30">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 h-8 text-xs bg-muted/30 hover:bg-muted/60 border border-border/30 hover:border-border/60 transition-all duration-200"
+              onClick={() => onPreview?.({ id, title, file_url, type })}
+            >
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              Preview
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1 h-8 text-xs bg-gradient-to-r from-primary/80 to-accent/80 hover:from-primary hover:to-accent text-white border-0 shadow-md shadow-primary/20 transition-all duration-200"
+              onClick={() => onDownload?.({ id, title, file_url, type })}
+            >
+              <Download className="h-3.5 w-3.5 mr-1.5" />
+              Download
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+              onClick={() => id && onLike?.(id)}
+            >
+              <Heart className={`h-3.5 w-3.5 ${liked ? 'text-red-400 fill-red-400' : ''}`} />
+            </Button>
+            {canEdit && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                  onClick={() => onEdit?.({ id, title, description, department, subject, file_url, type, year })}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+                  onClick={() => onDelete?.({ id, title, file_url })}
+                >
+                  <Trash className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

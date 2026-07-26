@@ -7,7 +7,7 @@ import { FilterSection } from "@/components/FilterSection";
 import { ResourceCard } from "@/components/ResourceCard";
 import { ResourcePreview } from "@/components/ResourcePreview";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Clock, Star, Upload, Filter } from "lucide-react";
+import { Upload, Filter, ChevronDown, Loader2 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/EmptyState";
@@ -119,6 +119,8 @@ const Dashboard = () => {
   });
   const [previewResource, setPreviewResource] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [loadingMore, setLoadingMore] = useState(false);
   const { toast } = useToast();
 
   // Filtering logic (copied from Resources)
@@ -156,6 +158,7 @@ const Dashboard = () => {
     } else {
       applyFilters(resources, filters);
     }
+    setVisibleCount(6);
   }, [filters, resources]);
 
   useEffect(() => {
@@ -173,8 +176,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('resources')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(6);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -422,41 +424,6 @@ const Dashboard = () => {
       
       {/* Main Content */}
       <div className="container mx-auto px-4 lg:px-8 py-12">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            {
-              icon: TrendingUp,
-              title: "Trending Resources",
-              description: "Most popular uploads this week",
-              color: "text-academic-blue bg-academic-blue/10",
-            },
-            {
-              icon: Clock,
-              title: "Recent Uploads",
-              description: "Latest additions to the library",
-              color: "text-academic-green bg-academic-green/10",
-            },
-            {
-              icon: Star,
-              title: "Top Rated",
-              description: "Highest quality resources",
-              color: "text-academic-orange bg-academic-orange/10",
-            },
-          ].map((stat, index) => (
-            <div
-              key={index}
-              className="p-6 bg-gradient-card rounded-lg border border-border/50 hover:shadow-card transition-all duration-300 group"
-            >
-              <div className={`inline-flex p-3 rounded-lg ${stat.color} mb-4 group-hover:scale-110 transition-transform`}>
-                <stat.icon className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{stat.title}</h3>
-              <p className="text-muted-foreground text-sm">{stat.description}</p>
-            </div>
-          ))}
-        </div>
-
         {/* Filters */}
         <div className="mb-8">
           <FilterSection onFiltersChange={handleFiltersChange} resetSignal={resetSignal} onClearAll={() => setFilters({})} />
@@ -478,19 +445,49 @@ const Dashboard = () => {
 
         {/* Resources Grid */}
         {filteredResources.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredResources.map((resource, index) => (
-              <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <ResourceCard 
-                  {...resource} 
-                  onPreview={handlePreview}
-                  onDownload={handleDownload}
-                  onLike={handleLike}
-                  authorLikes={resource.authorLikes}
-                />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredResources.slice(0, visibleCount).map((resource, index) => (
+                <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${(index % 6) * 0.07}s` }}>
+                  <ResourceCard
+                    {...resource}
+                    onPreview={handlePreview}
+                    onDownload={handleDownload}
+                    onLike={handleLike}
+                    authorLikes={resource.authorLikes}
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Load More */}
+            {visibleCount < filteredResources.length && (
+              <div className="text-center mt-10">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Showing <span className="font-semibold text-foreground">{visibleCount}</span> of{' '}
+                  <span className="font-semibold text-foreground">{filteredResources.length}</span> resources
+                </p>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="px-8 border-primary/30 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-300 group"
+                  disabled={loadingMore}
+                  onClick={async () => {
+                    setLoadingMore(true);
+                    await new Promise(r => setTimeout(r, 400));
+                    setVisibleCount(v => v + 6);
+                    setLoadingMore(false);
+                  }}
+                >
+                  {loadingMore
+                    ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Loading...</>
+                    : <><ChevronDown className="h-4 w-4 mr-2 group-hover:translate-y-0.5 transition-transform" />Load More Resources</>}
+                </Button>
               </div>
-            ))}
-          </div>
+            )}
+            {visibleCount >= filteredResources.length && filteredResources.length > 6 && (
+              <p className="text-center text-sm text-muted-foreground mt-8">✓ All {filteredResources.length} resources loaded</p>
+            )}
+          </>
         ) : (
           <EmptyState
             icon={Filter}
@@ -500,12 +497,6 @@ const Dashboard = () => {
             onAction={() => { setFilters({}); setResetSignal(prev => prev + 1); }}
           />
         )}
-        {/* Load More */}
-        <div className="text-center mt-12">
-          <Button variant="outline" size="lg" className="px-8">
-            Load More Resources
-          </Button>
-        </div>
       </div>
       
       <ResourcePreview

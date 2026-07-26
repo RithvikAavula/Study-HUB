@@ -9,7 +9,7 @@ import { ResourceEditDialog } from '@/components/ResourceEditDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Filter, SortAsc, RefreshCw } from 'lucide-react';
+import { Upload, Filter, SortAsc, RefreshCw, ChevronDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
@@ -121,6 +121,8 @@ const Resources = () => {
   const { toast } = useToast();
   const [userRatings, setUserRatings] = useState({});
   const [resetSignal, setResetSignal] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -331,6 +333,7 @@ const Resources = () => {
     const allEmpty = Object.values(filters).every(v => !v);
     const base = allEmpty ? resources : applyFilters(resources, filters);
     sortResources(base, sortBy);
+    setVisibleCount(6);
   }, [filters, resources, sortBy]);
 
   const handleSort = (sortType: string) => {
@@ -615,24 +618,55 @@ const Resources = () => {
         {loading ? (
           <SkeletonGrid count={6} />
         ) : filteredResources.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {filteredResources.map((resource, index) => (
-              <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <ResourceCard 
-                  {...resource} 
-                  onPreview={handlePreview}
-                  onDownload={handleDownload}
-                  onLike={handleLike}
-                  authorLikes={resource.authorLikes}
-                  userRating={resource.userRating}
-                  onRate={handleRate}
-                  canEdit={resource.canEdit}
-                  onEdit={handleEditOpen}
-                  onDelete={handleDelete}
-                />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              {filteredResources.slice(0, visibleCount).map((resource, index) => (
+                <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${(index % 6) * 0.07}s` }}>
+                  <ResourceCard
+                    {...resource}
+                    onPreview={handlePreview}
+                    onDownload={handleDownload}
+                    onLike={handleLike}
+                    authorLikes={resource.authorLikes}
+                    userRating={resource.userRating}
+                    onRate={handleRate}
+                    canEdit={resource.canEdit}
+                    onEdit={handleEditOpen}
+                    onDelete={handleDelete}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Load More */}
+            {visibleCount < filteredResources.length && (
+              <div className="text-center mt-8 lg:mt-12">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Showing <span className="font-semibold text-foreground">{visibleCount}</span> of{' '}
+                  <span className="font-semibold text-foreground">{filteredResources.length}</span> resources
+                </p>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="px-6 lg:px-8 border-primary/30 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-300 group"
+                  disabled={loadingMore}
+                  onClick={async () => {
+                    setLoadingMore(true);
+                    await new Promise(r => setTimeout(r, 400));
+                    setVisibleCount(v => v + 6);
+                    setLoadingMore(false);
+                  }}
+                >
+                  {loadingMore
+                    ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Loading...</>
+                    : <><ChevronDown className="h-4 w-4 mr-2 group-hover:translate-y-0.5 transition-transform" />Load More Resources</>}
+                </Button>
               </div>
-            ))}
-          </div>
+            )}
+            {visibleCount >= filteredResources.length && filteredResources.length > 6 && (
+              <p className="text-center text-sm text-muted-foreground mt-8">✓ All {filteredResources.length} resources loaded</p>
+            )}
+          </>
         ) : (
           <EmptyState
             icon={Filter}
@@ -641,15 +675,6 @@ const Resources = () => {
             actionLabel="Clear All Filters"
             onAction={() => { setFilters({}); setResetSignal(prev => prev + 1); }}
           />
-        )}
-
-        {/* Load More */}
-        {filteredResources.length > 0 && filteredResources.length >= 6 && (
-          <div className="text-center mt-8 lg:mt-12">
-            <Button variant="outline" size="lg" className="px-6 lg:px-8">
-              Load More Resources
-            </Button>
-          </div>
         )}
         </div>
       </PullToRefresh>

@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +11,7 @@ import { ResourceCard } from '@/components/ResourceCard';
 import { ResourcePreview } from '@/components/ResourcePreview';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send } from 'lucide-react';
+import { MessageCircle, Users, Shield, ArrowRight, Lock } from 'lucide-react';
 
 const CommunityPage: React.FC = () => {
   const { id } = useParams();
@@ -265,48 +264,88 @@ const CommunityPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-6 lg:py-10">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold">{community?.name || 'Community'}</h1>
-            <p className="text-muted-foreground">Department: {community?.department}</p>
+      <div className="container mx-auto px-4 py-6 lg:py-10 max-w-4xl">
+
+        {/* ── Community Header ── */}
+        <div className="flex items-start justify-between mb-6 gap-4">
+          <div className="flex items-center gap-4">
+            <div
+              className="h-16 w-16 rounded-full flex items-center justify-center text-2xl font-bold text-white flex-shrink-0 shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #00a884 0%, #025144 100%)' }}
+            >
+              {community?.name?.[0]?.toUpperCase() || '?'}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{community?.name || 'Community'}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-muted-foreground">{community?.department}</span>
+                {community?.is_private && (
+                  <span className="flex items-center gap-1 text-xs text-amber-400">
+                    <Lock className="h-3 w-3" /> Private
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground">· {members.length} members</span>
+              </div>
+            </div>
           </div>
           {!isMember && community?.created_by !== user.id && (
-            <Button onClick={requestJoin}>Request to Join</Button>
+            <Button onClick={requestJoin} className="flex-shrink-0">Request to Join</Button>
           )}
         </div>
 
-        {/* Sub-pages navigation */}
-        <div className="flex items-center gap-2 mb-6">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/communities/${id}/messages`)}>Messages</Button>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/communities/${id}/members`)}>Members</Button>
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => navigate(`/communities/${id}/requests`)}>Requests</Button>
-          )}
-        </div>
-
-        {/* Chat */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="font-semibold mb-2">Community Chat</div>
-            <div className="space-y-2 max-h-[300px] overflow-auto border rounded p-2 mb-3">
-              {messages.map(msg => (
-                <div key={msg.id} className="text-sm">
-                  <span className="text-muted-foreground">{profileMap[msg.user_id] || msg.user_id}:</span> {msg.content}
-                </div>
-              ))}
+        {/* ── Navigation Cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+          <button
+            onClick={() => navigate(`/communities/${id}/messages`)}
+            className="group flex items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg text-left"
+            style={{ background: '#005c4b22', borderColor: '#00a88433' }}
+          >
+            <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#005c4b' }}>
+              <MessageCircle className="h-5 w-5 text-white" />
             </div>
-            {isMember ? (
-              <form onSubmit={sendMessage} className="flex gap-2">
-                <Input value={messageText} onChange={e => setMessageText(e.target.value)} placeholder="Type a message..." />
-                <Button type="submit"><Send className="h-4 w-4 mr-1" />Send</Button>
-              </form>
-            ) : (
-              <div className="text-sm text-muted-foreground">Join the community to post messages.</div>
-            )}
-          </CardContent>
-        </Card>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-foreground">Messages</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {messages.length > 0
+                  ? `${profileMap[messages[messages.length - 1]?.user_id] || 'Someone'}: ${messages[messages.length - 1]?.content?.slice(0, 28)}…`
+                  : 'No messages yet'}
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
+          </button>
+
+          <button
+            onClick={() => navigate(`/communities/${id}/members`)}
+            className="group flex items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg text-left"
+            style={{ background: '#1d283a', borderColor: '#2a3942' }}
+          >
+            <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/20">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm text-foreground">Members</p>
+              <p className="text-xs text-muted-foreground">{members.length} participant{members.length !== 1 ? 's' : ''}</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
+          </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => navigate(`/communities/${id}/requests`)}
+              className="group flex items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg text-left"
+              style={{ background: '#2a1a0a', borderColor: '#ff980033' }}
+            >
+              <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#ff980033' }}>
+                <Shield className="h-5 w-5" style={{ color: '#ff9800' }} />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-sm text-foreground">Requests</p>
+                <p className="text-xs text-muted-foreground">Manage join requests</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
+            </button>
+          )}
+        </div>
 
         {/* Resources in community */}
         <div className="flex items-center justify-between mb-2">
