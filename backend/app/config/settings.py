@@ -22,9 +22,6 @@ class Settings(BaseSettings):
     supabase_anon_key: str
     supabase_storage_bucket: str = "academic-resources"
 
-    # Embedding
-    embedding_model: str = "BAAI/bge-small-en-v1.5"
-
     # App
     app_env: str = "development"
     app_host: str = "0.0.0.0"

@@ -1,55 +1,50 @@
-from typing import List, Optional
-from sentence_transformers import SentenceTransformer
+import httpx
+from typing import List
 from app.config.settings import get_settings
 from app.utils.logger import logger
 
 settings = get_settings()
 
+# text-embedding-3-small produces 1536-dim vectors, widely supported
+EMBEDDING_MODEL = "openai/text-embedding-3-small"
+EMBEDDING_DIM = 1536
+
 
 class EmbeddingService:
-    """Generates embeddings using BAAI/bge-small-en-v1.5."""
+    """Generates embeddings via OpenRouter's embedding API (no local model)."""
 
-    _instance: Optional["EmbeddingService"] = None
-    _model: Optional[SentenceTransformer] = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def _load_model(self):
-        if self._model is None:
-            logger.info("Loading embedding model", model=settings.embedding_model)
-            self._model = SentenceTransformer(settings.embedding_model)
-            logger.info("Embedding model loaded")
+    def _embed(self, texts: List[str]) -> List[List[float]]:
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(
+                f"{settings.openrouter_base_url}/embeddings",
+                headers={
+                    "Authorization": f"Bearer {settings.openrouter_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={"model": EMBEDDING_MODEL, "input": texts},
+            )
+            response.raise_for_status()
+            data = response.json()
+            # Sort by index to preserve order
+            items = sorted(data["data"], key=lambda x: x["index"])
+            return [item["embedding"] for item in items]
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Embed a batch of texts. Returns list of float vectors."""
-        self._load_model()
-        # BGE models benefit from a query prefix for retrieval
-        embeddings = self._model.encode(
-            texts,
-            batch_size=32,
-            show_progress_bar=False,
-            normalize_embeddings=True,
-        )
-        return embeddings.tolist()
+        """Embed a batch of texts in chunks of 100."""
+        all_embeddings: List[List[float]] = []
+        for i in range(0, len(texts), 100):
+            batch = texts[i:i + 100]
+            logger.info("Embedding batch", start=i, size=len(batch))
+            all_embeddings.extend(self._embed(batch))
+        return all_embeddings
 
     def embed_query(self, query: str) -> List[float]:
-        """Embed a single query with BGE query prefix."""
-        self._load_model()
-        # BGE recommends this prefix for retrieval queries
-        prefixed = f"Represent this sentence for searching relevant passages: {query}"
-        embedding = self._model.encode(
-            [prefixed],
-            normalize_embeddings=True,
-        )
-        return embedding[0].tolist()
+        """Embed a single query string."""
+        return self._embed([query])[0]
 
     def get_dimension(self) -> int:
-        self._load_model()
-        return self._model.get_sentence_embedding_dimension()
+        return EMBEDDING_DIM
 
 
-# Singleton instance
+# Singleton
 embedding_service = EmbeddingService()
