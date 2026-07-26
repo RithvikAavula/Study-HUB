@@ -40,10 +40,11 @@ class ChromaService:
             target_meta = {"hnsw:space": "cosine", "embedding_dim": EMBEDDING_DIM}
             try:
                 existing = client.get_collection(name=settings.chroma_collection)
-                stored_dim = existing.metadata.get("embedding_dim") if existing.metadata else None
-                if stored_dim is not None and int(stored_dim) != EMBEDDING_DIM:
+                stored_dim = (existing.metadata or {}).get("embedding_dim")
+                # If dim is missing OR mismatched, delete and recreate
+                if stored_dim is None or int(stored_dim) != EMBEDDING_DIM:
                     logger.warning(
-                        "Chroma collection dimension mismatch — deleting and recreating",
+                        "Chroma collection dim mismatch or unset — recreating",
                         stored=stored_dim, expected=EMBEDDING_DIM,
                     )
                     client.delete_collection(name=settings.chroma_collection)
@@ -53,11 +54,18 @@ class ChromaService:
                     )
                 else:
                     self._collection = existing
-            except Exception:
-                self._collection = client.get_or_create_collection(
-                    name=settings.chroma_collection,
-                    metadata=target_meta,
-                )
+            except Exception as e:
+                if "does not exist" in str(e).lower() or "not found" in str(e).lower():
+                    self._collection = client.create_collection(
+                        name=settings.chroma_collection,
+                        metadata=target_meta,
+                    )
+                else:
+                    # Unexpected error — try get_or_create as fallback
+                    self._collection = client.get_or_create_collection(
+                        name=settings.chroma_collection,
+                        metadata=target_meta,
+                    )
             logger.info("Chroma collection ready", name=settings.chroma_collection, dim=EMBEDDING_DIM)
         return self._collection
 

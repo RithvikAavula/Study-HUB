@@ -29,10 +29,9 @@ class RAGService:
         existing = db.table("documents").select("id, index_status").eq("resource_id", request.resource_id).execute()
         if existing.data:
             doc = existing.data[0]
-            # If completed or processing, return existing doc_id
-            if doc["index_status"] in ("completed", "processing"):
+            if doc["index_status"] == "completed":
                 return doc["id"]
-            # If failed, delete old record and re-index
+            # Delete and re-index if failed or stuck in processing
             db.table("documents").delete().eq("id", doc["id"]).execute()
 
         doc_id = str(uuid.uuid4())

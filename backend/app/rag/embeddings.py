@@ -14,7 +14,7 @@ class EmbeddingService:
     """Generates embeddings via OpenRouter's embedding API (no local model)."""
 
     def _embed(self, texts: List[str]) -> List[List[float]]:
-        with httpx.Client(timeout=60.0) as client:
+        with httpx.Client(timeout=120.0) as client:
             response = client.post(
                 f"{settings.openrouter_base_url}/embeddings",
                 headers={
