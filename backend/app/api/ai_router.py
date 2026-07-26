@@ -1,4 +1,5 @@
 import json
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from supabase import Client
@@ -15,6 +16,8 @@ from app.models.schemas import (
     ConversationSummary, ConversationDetail,
     SuggestedQuestionsRequest, SuggestedQuestionsResponse,
 )
+from app.rag.vector_store import chroma_service
+from app.rag.embeddings import embedding_service
 from app.services.rag_service import rag_service
 from app.services.ai_tools_service import ai_tools_service
 from app.services.conversation_service import conversation_service
@@ -138,7 +141,6 @@ async def reindex_document(body: DocumentUploadRequest, user: dict = Depends(get
             doc_id = existing.data[0]["id"]
             db.table("document_chunks").delete().eq("document_id", doc_id).execute()
             db.table("documents").delete().eq("id", doc_id).execute()
-            from app.rag.vector_store import chroma_service
             chroma_service.delete_by_document_id(doc_id)
         doc_id = await rag_service.index_document(body, db)
         return DocumentUploadResponse(document_id=doc_id, status="processing", message="Re-indexing started.")
@@ -168,7 +170,6 @@ async def document_status(document_id: str, user: dict = Depends(get_current_use
 
 @router.get("/debug/chroma-count")
 async def chroma_count(user: dict = Depends(get_current_user)):
-    from app.rag.vector_store import chroma_service
     count = chroma_service.count()
     return {"total_chunks": count}
 
@@ -178,17 +179,17 @@ async def chroma_debug_query(
     resource_id: str,
     user: dict = Depends(get_current_user),
 ):
-    from app.rag.vector_store import chroma_service
-    from app.rag.embeddings import embedding_service
-    import asyncio
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     emb = await loop.run_in_executor(None, embedding_service.embed_query, "test query")
-    results = chroma_service.query(emb, n_results=3, where={"resource_id": {"$eq": resource_id}})
-    return {
-        "total_in_collection": chroma_service.count(),
-        "hits": len((results.get("documents") or [[]])[0]),
-        "metadatas": (results.get("metadatas") or [[]])[0],
-    }
+    try:
+        results = chroma_service.query(emb, n_results=3, where={"resource_id": {"$eq": resource_id}})
+        return {
+            "total_in_collection": chroma_service.count(),
+            "hits": len((results.get("documents") or [[]])[0]),
+            "metadatas": (results.get("metadatas") or [[]])[0],
+        }
+    finally:
+        del emb
 
 
 # ─── Conversations ──────────────────────────────────────────────────────────────

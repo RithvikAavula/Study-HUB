@@ -2,9 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Prefer environment variables (Vite) for deployment; fallback to defaults for local dev
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || "https://mzsjjjbetjcybovnyaaw.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16c2pqamJldGpjeWJvdm55YWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTE3NTksImV4cCI6MjA2ODc2Nzc1OX0.S20798FZFXUidjIZWUYRcPoqpt8emdE4QRQkJmo427o";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables.');
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

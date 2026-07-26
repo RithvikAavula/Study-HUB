@@ -18,7 +18,7 @@ class PDFParser:
 
         # If pdfplumber got very little text, try pymupdf
         total_text = sum(len(t) for _, t in pages)
-        if total_text < 100 and len(pages) > 0:
+        if total_text < 100 and pages:
             logger.info("pdfplumber got minimal text, trying pymupdf fallback")
             pages = self._extract_with_pymupdf(pdf_bytes)
 
@@ -39,12 +39,11 @@ class PDFParser:
     def _extract_with_pymupdf(self, pdf_bytes: bytes) -> List[Tuple[int, str]]:
         pages = []
         try:
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            for i, page in enumerate(doc, start=1):
-                text = page.get_text("text") or ""
-                text = self._clean_text(text)
-                pages.append((i, text))
-            doc.close()
+            with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+                for i, page in enumerate(doc, start=1):
+                    text = page.get_text("text") or ""
+                    text = self._clean_text(text)
+                    pages.append((i, text))
         except Exception as e:
             logger.warning("pymupdf extraction failed", error=str(e))
         return pages
@@ -62,10 +61,8 @@ class PDFParser:
                 return len(pdf.pages)
         except Exception:
             try:
-                doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-                count = len(doc)
-                doc.close()
-                return count
+                with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+                    return len(doc)
             except Exception:
                 return 0
 

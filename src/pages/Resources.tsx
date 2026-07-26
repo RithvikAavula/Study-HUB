@@ -250,8 +250,7 @@ const Resources = () => {
       } else {
         setFilteredResources(transformedData);
       }
-    } catch (error) {
-      console.error('Error fetching resources:', error);
+    } catch {
       setFilteredResources([]);
     } finally {
       setLoading(false);
@@ -279,30 +278,23 @@ const Resources = () => {
 
   const applyFilters = (data: any[], filterOptions: any) => {
     let filtered = data;
-    console.log('All resources:', data);
-    console.log('Applying filters:', filterOptions);
     if (filterOptions.department && filterOptions.department !== "") {
       filtered = filtered.filter(r => r.department === filterOptions.department);
-      console.log('After department filter:', filtered);
     }
     if (filterOptions.year && filterOptions.year !== "") {
       filtered = filtered.filter(r => r.year === filterOptions.year);
-      console.log('After year filter:', filtered);
     }
     if (filterOptions.type && filterOptions.type !== "") {
       filtered = filtered.filter(r => r.type === filterOptions.type);
-      console.log('After type filter:', filtered);
     }
     if (filterOptions.subject && filterOptions.subject !== "") {
       filtered = filtered.filter(r => r.subject && r.subject.toLowerCase().includes(filterOptions.subject.toLowerCase()));
-      console.log('After subject filter:', filtered);
     }
     if (filterOptions.search && filterOptions.search !== "") {
-      filtered = filtered.filter(r => 
+      filtered = filtered.filter(r =>
         (r.title && r.title.toLowerCase().includes(filterOptions.search.toLowerCase())) ||
         (r.description && r.description.toLowerCase().includes(filterOptions.search.toLowerCase()))
       );
-      console.log('After search filter:', filtered);
     }
     return filtered;
   };
@@ -371,8 +363,7 @@ const Resources = () => {
         // Refresh resources to update download count
         fetchResources();
       }
-    } catch (error) {
-      console.error('Error downloading resource:', error);
+    } catch {
       toast({
         title: "Download failed",
         description: "There was an error downloading the file. Please try again.",
@@ -480,8 +471,7 @@ const Resources = () => {
 
       // Refresh resources to update like count
       fetchResources();
-    } catch (error) {
-      console.error('Error handling like:', error);
+    } catch {
       toast({
         title: "Error",
         description: "Failed to update like status. Please try again.",

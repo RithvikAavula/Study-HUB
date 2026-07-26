@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
 
     # Database (optional — not used, Supabase client handles DB)
-    database_url: str = "postgresql://unused:unused@localhost:5432/postgres"
+    database_url: Optional[str] = None
 
     # RAG
     chunk_size: int = 700

@@ -59,81 +59,18 @@ class RAGService:
             pdf_bytes = await supabase_storage.download_file(request.file_url)
             if not pdf_bytes:
                 raise ValueError(f"Empty file downloaded from: {request.file_url}")
-
             logger.info("PDF downloaded", doc_id=doc_id, size=len(pdf_bytes))
 
-            # Use running loop — correct for Python 3.10+
             loop = asyncio.get_running_loop()
+            pages, chunks = await self._parse_and_chunk(loop, doc_id, pdf_bytes)
+            embeddings = await self._generate_embeddings(loop, doc_id, chunks)
+            chroma_ids, chroma_embeddings, chroma_docs, chroma_metas, db_chunks = \
+                self._build_chunk_payloads(doc_id, request, chunks, embeddings)
 
-            valid, err = await loop.run_in_executor(None, pdf_parser.validate_pdf, pdf_bytes)
-            if not valid:
-                raise ValueError(err)
-
-            pages = await loop.run_in_executor(None, pdf_parser.extract_pages, pdf_bytes)
-            page_count = len(pages)
-            logger.info("PDF parsed", doc_id=doc_id, pages=page_count)
-
-            if page_count == 0:
-                raise ValueError("PDF has no readable pages")
-
-            chunks = await loop.run_in_executor(None, chunker.chunk_pages, pages)
-            if not chunks:
-                raise ValueError("No text content extracted from PDF")
-
-            logger.info("Chunks created", doc_id=doc_id, chunks=len(chunks))
-
-            texts = [c.text for c in chunks]
-            embeddings = await loop.run_in_executor(None, embedding_service.embed_texts, texts)
-            logger.info("Embeddings generated", doc_id=doc_id, count=len(embeddings))
-
-            chroma_ids, chroma_embeddings, chroma_docs, chroma_metas = [], [], [], []
-            db_chunks = []
-
-            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-                chroma_id = f"{doc_id}_{i}"
-                chroma_ids.append(chroma_id)
-                chroma_embeddings.append(embedding)
-                chroma_docs.append(chunk.text)
-                chroma_metas.append({
-                    "resource_id": str(request.resource_id),
-                    "document_id": str(doc_id),
-                    "page_number": int(chunk.page_number),
-                    "chunk_index": int(chunk.chunk_index),
-                    "department": str(request.department or ""),
-                    "year": str(request.year),
-                    "subject": str(request.subject or ""),
-                    "title": str(request.title or ""),
-                    "uploaded_by": str(request.uploaded_by),
-                    "file_name": str(request.file_name or ""),
-                })
-                db_chunks.append({
-                    "id": str(uuid.uuid4()),
-                    "document_id": doc_id,
-                    "chunk_text": chunk.text,
-                    "page_number": chunk.page_number,
-                    "chunk_index": chunk.chunk_index,
-                    "embedding_id": chroma_id,
-                })
-
-            await loop.run_in_executor(
-                None,
-                lambda: chroma_service.upsert_chunks(
-                    chroma_ids, chroma_embeddings, chroma_docs, chroma_metas
-                ),
+            await self._persist_chunks(
+                loop, db, doc_id, len(pages),
+                chroma_ids, chroma_embeddings, chroma_docs, chroma_metas, db_chunks,
             )
-            logger.info("Chroma upsert done", doc_id=doc_id)
-
-            # Insert chunks in batches of 100
-            for i in range(0, len(db_chunks), 100):
-                db.table("document_chunks").insert(db_chunks[i:i+100]).execute()
-
-            db.table("documents").update({
-                "pages": page_count,
-                "is_indexed": True,
-                "index_status": "completed",
-                "index_error": None,
-            }).eq("id", doc_id).execute()
-
             logger.info("Document indexed successfully", doc_id=doc_id, chunks=len(db_chunks))
 
         except Exception as e:
@@ -145,6 +82,73 @@ class RAGService:
                 }).eq("id", doc_id).execute()
             except Exception as db_err:
                 logger.error("Failed to update index_status to failed", error=str(db_err))
+
+    async def _parse_and_chunk(self, loop, doc_id: str, pdf_bytes: bytes):
+        valid, err = await loop.run_in_executor(None, pdf_parser.validate_pdf, pdf_bytes)
+        if not valid:
+            raise ValueError(err)
+        pages = await loop.run_in_executor(None, pdf_parser.extract_pages, pdf_bytes)
+        if not pages:
+            raise ValueError("PDF has no readable pages")
+        logger.info("PDF parsed", doc_id=doc_id, pages=len(pages))
+        chunks = await loop.run_in_executor(None, chunker.chunk_pages, pages)
+        if not chunks:
+            raise ValueError("No text content extracted from PDF")
+        logger.info("Chunks created", doc_id=doc_id, chunks=len(chunks))
+        return pages, chunks
+
+    async def _generate_embeddings(self, loop, doc_id: str, chunks):
+        texts = [c.text for c in chunks]
+        embeddings = await loop.run_in_executor(None, embedding_service.embed_texts, texts)
+        logger.info("Embeddings generated", doc_id=doc_id, count=len(embeddings))
+        return embeddings
+
+    def _build_chunk_payloads(self, doc_id: str, request: DocumentUploadRequest, chunks, embeddings):
+        chroma_ids, chroma_embeddings, chroma_docs, chroma_metas, db_chunks = [], [], [], [], []
+        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            chroma_id = f"{doc_id}_{i}"
+            chroma_ids.append(chroma_id)
+            chroma_embeddings.append(embedding)
+            chroma_docs.append(chunk.text)
+            chroma_metas.append({
+                "resource_id": str(request.resource_id),
+                "document_id": str(doc_id),
+                "page_number": int(chunk.page_number),
+                "chunk_index": int(chunk.chunk_index),
+                "department": str(request.department or ""),
+                "year": str(request.year),
+                "subject": str(request.subject or ""),
+                "title": str(request.title or ""),
+                "uploaded_by": str(request.uploaded_by),
+                "file_name": str(request.file_name or ""),
+            })
+            db_chunks.append({
+                "id": str(uuid.uuid4()),
+                "document_id": doc_id,
+                "chunk_text": chunk.text,
+                "page_number": chunk.page_number,
+                "chunk_index": chunk.chunk_index,
+                "embedding_id": chroma_id,
+            })
+        return chroma_ids, chroma_embeddings, chroma_docs, chroma_metas, db_chunks
+
+    async def _persist_chunks(
+        self, loop, db, doc_id: str, page_count: int,
+        chroma_ids, chroma_embeddings, chroma_docs, chroma_metas, db_chunks,
+    ):
+        await loop.run_in_executor(
+            None,
+            lambda: chroma_service.upsert_chunks(chroma_ids, chroma_embeddings, chroma_docs, chroma_metas),
+        )
+        logger.info("Chroma upsert done", doc_id=doc_id)
+        for i in range(0, len(db_chunks), 100):
+            db.table("document_chunks").insert(db_chunks[i:i + 100]).execute()
+        db.table("documents").update({
+            "pages": page_count,
+            "is_indexed": True,
+            "index_status": "completed",
+            "index_error": None,
+        }).eq("id", doc_id).execute()
 
     # ─── RAG Query ─────────────────────────────────────────────────────────────
 
