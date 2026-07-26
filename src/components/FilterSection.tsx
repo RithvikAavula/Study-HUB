@@ -125,7 +125,8 @@ export const FilterSection = ({ onFiltersChange, resetSignal, onClearAll }: Filt
       subject: selectedSubject,
     };
     onFiltersChange?.(filters);
-  }, [searchQuery, selectedDepartment, selectedYear, selectedType, selectedSubject, onFiltersChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedDepartment, selectedYear, selectedType, selectedSubject]);
 
   return (
     <Card className="bg-gradient-card border-border/50">

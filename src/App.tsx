@@ -17,6 +17,7 @@ import CommunityPage from "./pages/Community";
 import CommunityMembers from "./pages/CommunityMembers";
 import CommunityRequests from "./pages/CommunityRequests";
 import CommunityMessages from "./pages/CommunityMessages";
+import AIAssistant from "./pages/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/communities/:id/messages" element={<CommunityMessages />} />
             <Route path="/communities/:id/members" element={<CommunityMembers />} />
             <Route path="/communities/:id/requests" element={<CommunityRequests />} />
+            <Route path="/ai" element={<AIAssistant />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

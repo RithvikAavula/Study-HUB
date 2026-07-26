@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, Upload, User, LogOut } from "lucide-react";
+import { Menu, X, Search, Upload, User, LogOut, Bot } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
@@ -83,6 +83,12 @@ export const Header = () => {
               >
                 Profile
               </button>
+              <button
+                onClick={() => navigate('/ai')}
+                className={`underline-slide transition-colors flex items-center gap-1 ${isActive('/ai') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              >
+                <Bot className="h-4 w-4" /> AI Assistant
+              </button>
             </nav>
           )}
 
@@ -105,6 +111,10 @@ export const Header = () => {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
+                <Button variant="outline" size="sm" onClick={() => navigate('/ai')}>
+                  <Bot className="h-4 w-4 mr-2" />
+                  AI
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => navigate('/upload')}>
                   <Upload className="h-4 w-4 mr-2" />
                   Upload
@@ -172,6 +182,12 @@ export const Header = () => {
                       className={`text-left py-2 transition-colors ${isActive('/profile') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                     >
                       Profile
+                    </button>
+                    <button
+                      onClick={() => { navigate('/ai'); setIsMenuOpen(false); }}
+                      className={`text-left py-2 transition-colors flex items-center gap-1 ${isActive('/ai') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                    >
+                      <Bot className="h-4 w-4" /> AI Assistant
                     </button>
                   </nav>
                   <div className="flex space-x-3 pt-2">

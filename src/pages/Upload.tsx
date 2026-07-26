@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Upload as UploadIcon, FileText, Image, FileX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { aiApi } from '@/lib/aiApi';
 
 const departments = [
   'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI&DS', 'BIOTECH', 'CHEM', 'AEROSPACE'
@@ -156,6 +157,28 @@ const Upload = () => {
         title: "Resource Uploaded Successfully!",
         description: "Your resource is now available for other students.",
       });
+
+      // Trigger AI indexing for PDFs in the background
+      if (selectedFile.type === 'application/pdf') {
+        // Fetch the newly inserted resource id
+        const { data: newResource } = await supabase
+          .from('resources')
+          .select('id')
+          .eq('file_url', publicUrl)
+          .single();
+        if (newResource) {
+          aiApi.uploadDocument({
+            resource_id: newResource.id,
+            file_url: publicUrl,
+            file_name: selectedFile.name,
+            department: formData.department,
+            year: parseInt(formData.year),
+            subject: formData.subject,
+            title: formData.title,
+            uploaded_by: user!.id,
+          }).catch(() => {}); // background — don't block UX
+        }
+      }
       
       // Reset form
       setFormData({
