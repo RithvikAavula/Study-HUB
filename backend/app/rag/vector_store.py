@@ -36,11 +36,29 @@ class ChromaService:
     def _get_collection(self):
         if self._collection is None:
             client = self._get_client()
-            self._collection = client.get_or_create_collection(
-                name=settings.chroma_collection,
-                metadata={"hnsw:space": "cosine"},
-            )
-            logger.info("Chroma collection ready", name=settings.chroma_collection)
+            from app.rag.embeddings import EMBEDDING_DIM
+            target_meta = {"hnsw:space": "cosine", "embedding_dim": EMBEDDING_DIM}
+            try:
+                existing = client.get_collection(name=settings.chroma_collection)
+                stored_dim = existing.metadata.get("embedding_dim") if existing.metadata else None
+                if stored_dim is not None and int(stored_dim) != EMBEDDING_DIM:
+                    logger.warning(
+                        "Chroma collection dimension mismatch — deleting and recreating",
+                        stored=stored_dim, expected=EMBEDDING_DIM,
+                    )
+                    client.delete_collection(name=settings.chroma_collection)
+                    self._collection = client.create_collection(
+                        name=settings.chroma_collection,
+                        metadata=target_meta,
+                    )
+                else:
+                    self._collection = existing
+            except Exception:
+                self._collection = client.get_or_create_collection(
+                    name=settings.chroma_collection,
+                    metadata=target_meta,
+                )
+            logger.info("Chroma collection ready", name=settings.chroma_collection, dim=EMBEDDING_DIM)
         return self._collection
 
     def upsert_chunks(
