@@ -193,7 +193,7 @@ export default function CommunityMessages() {
   const getName = (uid: string) => profiles[uid] || 'Anonymous';
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#111b21' }}>
+    <div className="flex flex-col h-[100dvh] overflow-hidden pb-14 md:pb-0" style={{ background: '#111b21' }}>
 
       {/* ── Top bar ── */}
       <div className="flex-shrink-0 flex items-center gap-2 px-2 py-2 z-20"

@@ -134,52 +134,54 @@ export const ResourceCard = ({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-3 border-t border-border/30">
+          <div className="flex gap-1.5 pt-3 border-t border-border/30">
             <Button
               variant="ghost"
               size="sm"
-              className="flex-1 h-8 text-xs bg-muted/30 hover:bg-muted/60 border border-border/30 hover:border-border/60 transition-all duration-200"
+              className="flex-1 min-w-0 h-8 text-xs bg-muted/30 hover:bg-muted/60 border border-border/30 hover:border-border/60 transition-all duration-200"
               onClick={() => onPreview?.({ id, title, file_url, type })}
             >
-              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              <Eye className="h-3.5 w-3.5 mr-1" />
               Preview
             </Button>
             <Button
               size="sm"
-              className="flex-1 h-8 text-xs bg-gradient-to-r from-primary/80 to-accent/80 hover:from-primary hover:to-accent text-white border-0 shadow-md shadow-primary/20 transition-all duration-200"
+              className="flex-1 min-w-0 h-8 text-xs bg-gradient-to-r from-primary/80 to-accent/80 hover:from-primary hover:to-accent text-white border-0 shadow-md shadow-primary/20 transition-all duration-200"
               onClick={() => onDownload?.({ id, title, file_url, type })}
             >
-              <Download className="h-3.5 w-3.5 mr-1.5" />
+              <Download className="h-3.5 w-3.5 mr-1" />
               Download
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
-              onClick={() => id && onLike?.(id)}
-            >
-              <Heart className={`h-3.5 w-3.5 ${liked ? 'text-red-400 fill-red-400' : ''}`} />
-            </Button>
-            {canEdit && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-all duration-200"
-                  onClick={() => onEdit?.({ id, title, description, department, subject, file_url, type, year })}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
-                  onClick={() => onDelete?.({ id, title, file_url })}
-                >
-                  <Trash className="h-3.5 w-3.5" />
-                </Button>
-              </>
-            )}
+            <div className="flex gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+                onClick={() => id && onLike?.(id)}
+              >
+                <Heart className={`h-3.5 w-3.5 ${liked ? 'text-red-400 fill-red-400' : ''}`} />
+              </Button>
+              {canEdit && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    onClick={() => onEdit?.({ id, title, description, department, subject, file_url, type, year })}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+                    onClick={() => onDelete?.({ id, title, file_url })}
+                  >
+                    <Trash className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

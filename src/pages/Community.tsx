@@ -264,7 +264,7 @@ const CommunityPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-6 lg:py-10 max-w-4xl">
+      <div className="container mx-auto px-4 py-6 lg:py-10 max-w-4xl pb-24 md:pb-10">
 
         {/* ── Community Header ── */}
         <div className="flex items-start justify-between mb-6 gap-4">
@@ -348,12 +348,12 @@ const CommunityPage: React.FC = () => {
         </div>
 
         {/* Resources in community */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
           <div className="font-semibold">Shared Resources</div>
           {isMember && (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setUploadOpen(true)}>Upload Private Resource</Button>
-              <Button onClick={openShareResource}>Share Existing</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)} className="flex-1 sm:flex-none text-xs sm:text-sm">Upload Private</Button>
+              <Button size="sm" onClick={openShareResource} className="flex-1 sm:flex-none text-xs sm:text-sm">Share Existing</Button>
             </div>
           )}
         </div>

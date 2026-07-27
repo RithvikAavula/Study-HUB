@@ -7,11 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import {
   Send, Plus, Trash2, MessageSquare, FileText,
   Sparkles, BookOpen, Brain, HelpCircle, AlignLeft,
-  ChevronRight, Loader2, Bot, PanelLeftClose, PanelLeftOpen, CheckCircle2, XCircle,
+  ChevronRight, Loader2, Bot, PanelLeftClose, PanelLeftOpen, CheckCircle2, XCircle, History, Library,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { aiApi, type Citation, type ConversationSummary, type MessageOut } from '@/lib/aiApi';
@@ -58,6 +59,8 @@ export default function AIAssistant() {
 
   // Layout
   const [leftOpen, setLeftOpen] = useState(true);
+  const [mobileConvsOpen, setMobileConvsOpen] = useState(false);
+  const [mobileDocsOpen, setMobileDocsOpen] = useState(false);
 
   // Chat state
   const [messages, setMessages] = useState<LocalMessage[]>([]);
@@ -375,93 +378,204 @@ export default function AIAssistant() {
     }
   };
 
+  // ── Shared conversations panel content ──────────────────────────────────
+  const ConversationsPanel = () => (
+    <>
+      <div className="p-3 border-b border-border flex-shrink-0">
+        <Button className="w-full" size="sm" onClick={() => { newChat(); setMobileConvsOpen(false); }}>
+          <Plus className="h-4 w-4 mr-2" /> New Chat
+        </Button>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-2 space-y-1">
+          {convsLoading ? (
+            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)
+          ) : conversations.length === 0 ? (
+            <div className="text-center py-8 text-xs text-muted-foreground">No conversations yet</div>
+          ) : (
+            conversations.map(conv => (
+              <div
+                key={conv.id}
+                onClick={() => { loadConversation(conv); setMobileConvsOpen(false); }}
+                className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm ${activeConvId === conv.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'}`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate text-xs">{conv.title}</span>
+                </div>
+                <button
+                  onClick={(e) => deleteConversation(conv.id, e)}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-all flex-shrink-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    </>
+  );
+
+  // ── Shared documents + tools panel content ───────────────────────────────
+  const DocsToolsPanel = () => (
+    <ScrollArea className="flex-1">
+      <div className="p-3 space-y-4">
+        {/* Quick Actions */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">AI Tools</p>
+          <div className="space-y-1.5">
+            {[
+              { id: 'summary', label: 'Generate Summary', icon: AlignLeft, color: 'text-blue-500' },
+              { id: 'flashcards', label: 'Flashcards', icon: BookOpen, color: 'text-green-500' },
+              { id: 'quiz', label: 'Generate Quiz', icon: HelpCircle, color: 'text-purple-500' },
+              { id: 'questions5', label: '5-Mark Questions', icon: Sparkles, color: 'text-orange-500' },
+              { id: 'questions10', label: '10-Mark Questions', icon: Sparkles, color: 'text-red-500' },
+            ].map(tool => (
+              <button
+                key={tool.id}
+                onClick={() => { runTool(tool.id); setMobileDocsOpen(false); }}
+                disabled={toolLoading === tool.id || indexingStatus === 'indexing'}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {toolLoading === tool.id
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground flex-shrink-0" />
+                  : <tool.icon className={`h-3.5 w-3.5 flex-shrink-0 ${tool.color}`} />
+                }
+                <span className="text-xs text-foreground">{tool.label}</span>
+                <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Documents */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Your PDFs</p>
+          {selectedResource && indexingStatus !== 'idle' && (
+            <div className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
+              indexingStatus === 'done' ? 'border-green-500/30 bg-green-500/10 text-green-600' :
+              indexingStatus === 'failed' ? 'border-red-500/30 bg-red-500/10 text-red-500' :
+              'border-primary/30 bg-primary/10 text-primary'
+            }`}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                {indexingStatus === 'indexing' && <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />}
+                {indexingStatus === 'done' && <CheckCircle2 className="h-3 w-3 flex-shrink-0" />}
+                {indexingStatus === 'failed' && <XCircle className="h-3 w-3 flex-shrink-0" />}
+                <span className="font-medium">
+                  {indexingStatus === 'indexing' && 'Indexing PDF...'}
+                  {indexingStatus === 'done' && 'Ready to chat!'}
+                  {indexingStatus === 'failed' && 'Indexing failed'}
+                </span>
+              </div>
+              {indexingStatus === 'indexing' && (
+                <>
+                  <div className="w-full h-1 bg-primary/20 rounded-full overflow-hidden mb-1">
+                    <div className="h-full bg-primary rounded-full" style={{width: '40%', animation: 'slide 1.5s ease-in-out infinite'}} />
+                  </div>
+                  <style>{`@keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }`}</style>
+                  <p className="text-[10px] opacity-70">Extracting text & building embeddings…</p>
+                </>
+              )}
+              {indexingStatus === 'done' && <p className="text-[10px] opacity-70">Document indexed — ask anything!</p>}
+              {indexingStatus === 'failed' && <p className="text-[10px] opacity-70">Could not process this PDF. Try re-selecting it.</p>}
+            </div>
+          )}
+          {resources.length === 0 ? (
+            <div className="text-xs text-muted-foreground text-center py-4">
+              No PDFs uploaded yet.{' '}
+              <button onClick={() => navigate('/upload')} className="text-primary hover:underline">Upload one</button>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {resources.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => { setSelectedResource(prev => prev?.id === r.id ? null : r); setMobileDocsOpen(false); }}
+                  className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${selectedResource?.id === r.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <FileText className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${selectedResource?.id === r.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{r.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.subject} · {r.department}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+
   if (!user) return null;
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden pb-14 md:pb-0">
       <Header />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* ── Left Sidebar: Conversations ─────────────────────────────────── */}
-        <div className={`${leftOpen ? 'w-64' : 'w-0'} flex-shrink-0 border-r border-border bg-card transition-all duration-300 overflow-hidden flex flex-col`}>
-          <div className="p-3 border-b border-border flex-shrink-0">
-            <Button className="w-full" size="sm" onClick={newChat}>
-              <Plus className="h-4 w-4 mr-2" /> New Chat
-            </Button>
-          </div>
-
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-              {convsLoading ? (
-                Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)
-              ) : conversations.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-foreground">No conversations yet</div>
-              ) : (
-                conversations.map(conv => (
-                  <div
-                    key={conv.id}
-                    onClick={() => loadConversation(conv)}
-                    className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm ${activeConvId === conv.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'}`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate text-xs">{conv.title}</span>
-                    </div>
-                    <button
-                      onClick={(e) => deleteConversation(conv.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-all flex-shrink-0"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
+        {/* ── Left Sidebar: Conversations (desktop only) ───────────────────── */}
+        <div className={`hidden md:flex ${leftOpen ? 'w-64' : 'w-0'} flex-shrink-0 border-r border-border bg-card transition-all duration-300 overflow-hidden flex-col`}>
+          <ConversationsPanel />
         </div>
 
         {/* ── Center: Chat ─────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Chat toolbar */}
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card/50 flex-shrink-0">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setLeftOpen(o => !o)}>
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card/50 flex-shrink-0">
+            {/* Desktop: sidebar toggle */}
+            <Button variant="ghost" size="sm" className="hidden md:flex h-8 w-8 p-0" onClick={() => setLeftOpen(o => !o)}>
               {leftOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+            </Button>
+            {/* Mobile: history button */}
+            <Button variant="ghost" size="sm" className="md:hidden h-8 w-8 p-0" onClick={() => setMobileConvsOpen(true)}>
+              <History className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2">
               <Bot className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">AI Study Assistant</span>
             </div>
-            {selectedResource && (
-              <Badge variant="secondary" className="text-xs ml-auto">
-                <FileText className="h-3 w-3 mr-1" />
-                {selectedResource.title.slice(0, 30)}{selectedResource.title.length > 30 ? '…' : ''}
+            {selectedResource ? (
+              <Badge variant="secondary" className="text-xs ml-auto max-w-[120px] sm:max-w-none truncate">
+                <FileText className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">{selectedResource.title.slice(0, 20)}{selectedResource.title.length > 20 ? '…' : ''}</span>
               </Badge>
+            ) : (
+              /* Mobile: docs/tools button */
+              <Button variant="ghost" size="sm" className="md:hidden h-8 w-8 p-0 ml-auto" onClick={() => setMobileDocsOpen(true)}>
+                <Library className="h-4 w-4" />
+              </Button>
+            )}
+            {selectedResource && (
+              <Button variant="ghost" size="sm" className="md:hidden h-8 w-8 p-0" onClick={() => setMobileDocsOpen(true)}>
+                <Library className="h-4 w-4" />
+              </Button>
             )}
           </div>
 
           {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center animate-fade-in">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mb-4 shadow-lg">
-                  <Brain className="h-8 w-8 text-white" />
+              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center animate-fade-in px-2">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+                  <Brain className="h-7 w-7 text-white" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">AI Study Assistant</h2>
-                <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                  Ask questions from your uploaded study materials. Select a PDF from the right panel to get started.
+                <h2 className="text-lg font-bold text-foreground mb-1">AI Study Assistant</h2>
+                <p className="text-xs text-muted-foreground mb-4 max-w-xs">
+                  Ask questions from your uploaded study materials.{' '}
+                  {!selectedResource && <button onClick={() => setMobileDocsOpen(true)} className="text-primary underline md:hidden">Select a PDF</button>}
+                  {!selectedResource && <span className="hidden md:inline">Select a PDF from the right panel to get started.</span>}
                 </p>
-
-                {/* Suggested questions */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                   {suggestionsLoading
                     ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)
                     : suggestedQuestions.slice(0, 6).map((q, i) => (
-                      <button
-                        key={i}
-                        onClick={() => sendMessage(q)}
-                        className="text-left text-xs px-3 py-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-foreground"
-                      >
+                      <button key={i} onClick={() => sendMessage(q)}
+                        className="text-left text-xs px-3 py-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-foreground">
                         {q}
                       </button>
                     ))
@@ -471,29 +585,21 @@ export default function AIAssistant() {
             ) : (
               <div className="max-w-3xl mx-auto pb-4">
                 {messages.map(msg => (
-                  <ChatMessage
-                    key={msg.id}
-                    role={msg.role}
-                    content={msg.content}
-                    citations={msg.citations}
-                    isStreaming={msg.isStreaming}
-                    onCitationClick={handleCitationClick}
-                  />
+                  <ChatMessage key={msg.id} role={msg.role} content={msg.content}
+                    citations={msg.citations} isStreaming={msg.isStreaming}
+                    onCitationClick={handleCitationClick} />
                 ))}
                 <div ref={bottomRef} />
               </div>
             )}
           </div>
 
-          {/* Suggested questions strip (when messages exist) */}
+          {/* Suggested questions strip */}
           {messages.length > 0 && suggestedQuestions.length > 0 && !isLoading && (
-            <div className="px-4 py-2 border-t border-border flex gap-2 overflow-x-auto flex-shrink-0 bg-card/30">
+            <div className="px-3 py-2 border-t border-border flex gap-2 overflow-x-auto flex-shrink-0 bg-card/30 scrollbar-none">
               {suggestedQuestions.slice(0, 4).map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(q)}
-                  className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-muted-foreground hover:text-foreground whitespace-nowrap"
-                >
+                <button key={i} onClick={() => sendMessage(q)}
+                  className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-muted-foreground hover:text-foreground whitespace-nowrap">
                   {q}
                 </button>
               ))}
@@ -501,145 +607,58 @@ export default function AIAssistant() {
           )}
 
           {/* Input */}
-          <div className="px-4 py-3 border-t border-border bg-card/50 flex-shrink-0">
+          <div className="px-3 py-3 border-t border-border bg-card/50 flex-shrink-0">
             <div className="max-w-3xl mx-auto flex gap-2 items-end">
-              <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={e => setInput(e.target.value)}
+              <Textarea ref={textareaRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={selectedResource ? `Ask about "${selectedResource.title}"...` : 'Ask a question from your study materials...'}
-                className="flex-1 min-h-[44px] max-h-32 resize-none text-sm"
-                rows={1}
-                disabled={isLoading}
-              />
+                placeholder={selectedResource ? `Ask about "${selectedResource.title.slice(0,25)}"...` : 'Ask a question...'}
+                className="flex-1 min-h-[44px] max-h-28 resize-none text-sm" rows={1} disabled={isLoading} />
               {isLoading ? (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-11 px-3 flex-shrink-0"
-                  onClick={() => { abortRef.current = true; setIsLoading(false); setStreamingId(null); }}
-                >
+                <Button size="sm" variant="destructive" className="h-11 px-3 flex-shrink-0"
+                  onClick={() => { abortRef.current = true; setIsLoading(false); setStreamingId(null); }}>
                   <span className="text-xs">Stop</span>
                 </Button>
               ) : (
-                <Button
-                  size="sm"
-                  className="h-11 px-3 flex-shrink-0"
-                  onClick={() => sendMessage(input)}
-                  disabled={!input.trim()}
-                >
+                <Button size="sm" className="h-11 px-3 flex-shrink-0"
+                  onClick={() => sendMessage(input)} disabled={!input.trim()}>
                   <Send className="h-4 w-4" />
                 </Button>
               )}
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-1.5 max-w-3xl mx-auto">
+            <p className="text-center text-xs text-muted-foreground mt-1.5 hidden sm:block">
               Answers are grounded in your uploaded study materials only.
             </p>
           </div>
         </div>
 
-        {/* ── Right Sidebar: Documents + Tools ─────────────────────────────── */}
-        <div className="w-64 flex-shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1">
-            <div className="p-3 space-y-4">
-
-              {/* Quick Actions */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">AI Tools</p>
-                <div className="space-y-1.5">
-                  {[
-                    { id: 'summary', label: 'Generate Summary', icon: AlignLeft, color: 'text-blue-500' },
-                    { id: 'flashcards', label: 'Flashcards', icon: BookOpen, color: 'text-green-500' },
-                    { id: 'quiz', label: 'Generate Quiz', icon: HelpCircle, color: 'text-purple-500' },
-                    { id: 'questions5', label: '5-Mark Questions', icon: Sparkles, color: 'text-orange-500' },
-                    { id: 'questions10', label: '10-Mark Questions', icon: Sparkles, color: 'text-red-500' },
-                  ].map(tool => (
-                    <button
-                      key={tool.id}
-                      onClick={() => runTool(tool.id)}
-                      disabled={toolLoading === tool.id || indexingStatus === 'indexing'}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {toolLoading === tool.id
-                        ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground flex-shrink-0" />
-                        : <tool.icon className={`h-3.5 w-3.5 flex-shrink-0 ${tool.color}`} />
-                      }
-                      <span className="text-xs text-foreground">{tool.label}</span>
-                      <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Documents */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Your PDFs</p>
-
-                {/* Indexing status banner */}
-                {selectedResource && indexingStatus !== 'idle' && (
-                  <div className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
-                    indexingStatus === 'done' ? 'border-green-500/30 bg-green-500/10 text-green-600' :
-                    indexingStatus === 'failed' ? 'border-red-500/30 bg-red-500/10 text-red-500' :
-                    'border-primary/30 bg-primary/10 text-primary'
-                  }`}>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      {indexingStatus === 'indexing' && <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />}
-                      {indexingStatus === 'done' && <CheckCircle2 className="h-3 w-3 flex-shrink-0" />}
-                      {indexingStatus === 'failed' && <XCircle className="h-3 w-3 flex-shrink-0" />}
-                      <span className="font-medium">
-                        {indexingStatus === 'indexing' && 'Indexing PDF...'}
-                        {indexingStatus === 'done' && 'Ready to chat!'}
-                        {indexingStatus === 'failed' && 'Indexing failed'}
-                      </span>
-                    </div>
-                    {indexingStatus === 'indexing' && (
-                      <>
-                        <div className="w-full h-1 bg-primary/20 rounded-full overflow-hidden mb-1">
-                          <div className="h-full bg-primary rounded-full animate-[indexing_1.5s_ease-in-out_infinite]" style={{width: '40%', animation: 'slide 1.5s ease-in-out infinite'}} />
-                        </div>
-                        <style>{`@keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }`}</style>
-                        <p className="text-[10px] opacity-70">Extracting text & building embeddings…</p>
-                      </>
-                    )}
-                    {indexingStatus === 'done' && (
-                      <p className="text-[10px] opacity-70">Document indexed — ask anything!</p>
-                    )}
-                    {indexingStatus === 'failed' && (
-                      <p className="text-[10px] opacity-70">Could not process this PDF. Try re-selecting it.</p>
-                    )}
-                  </div>
-                )}
-                {resources.length === 0 ? (
-                  <div className="text-xs text-muted-foreground text-center py-4">
-                    No PDFs uploaded yet.{' '}
-                    <button onClick={() => navigate('/upload')} className="text-primary hover:underline">Upload one</button>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    {resources.map(r => (
-                      <button
-                        key={r.id}
-                        onClick={() => setSelectedResource(prev => prev?.id === r.id ? null : r)}
-                        className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${selectedResource?.id === r.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <FileText className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${selectedResource?.id === r.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-foreground truncate">{r.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{r.subject} · {r.department}</p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-            </div>
-          </ScrollArea>
+        {/* ── Right Sidebar: desktop only ───────────────────────────────────── */}
+        <div className="hidden md:flex w-64 flex-shrink-0 border-l border-border bg-card flex-col overflow-hidden">
+          <DocsToolsPanel />
         </div>
       </div>
+
+      {/* ── Mobile Sheets ──────────────────────────────────────────────────── */}
+      <Sheet open={mobileConvsOpen} onOpenChange={setMobileConvsOpen}>
+        <SheetContent side="left" className="w-72 p-0 flex flex-col">
+          <SheetHeader className="px-4 py-3 border-b border-border flex-shrink-0">
+            <SheetTitle className="text-sm">Conversations</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <ConversationsPanel />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={mobileDocsOpen} onOpenChange={setMobileDocsOpen}>
+        <SheetContent side="right" className="w-80 p-0 flex flex-col">
+          <SheetHeader className="px-4 py-3 border-b border-border flex-shrink-0">
+            <SheetTitle className="text-sm">Documents & Tools</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <DocsToolsPanel />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
       {pdfViewer && (

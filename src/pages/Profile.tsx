@@ -225,18 +225,18 @@ const Profile = () => {
       <Header />
 
       {/* Hero banner */}
-      <div className="relative h-40 overflow-hidden">
+      <div className="relative h-24 sm:h-40 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-accent/20 to-background" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      <div className="container mx-auto px-4 max-w-6xl -mt-16 pb-12">
+      <div className="container mx-auto px-4 max-w-6xl -mt-12 sm:-mt-16 pb-24 md:pb-12">
         <div className="grid lg:grid-cols-3 gap-6">
 
           {/* ── Left: Profile Card ── */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="glass rounded-2xl border border-border/40 p-6 text-center">
+            <div className="glass rounded-2xl border border-border/40 p-4 sm:p-6 text-center">
               {/* Avatar */}
               <div className="relative inline-block mb-4">
                 <div className="p-1 rounded-full bg-gradient-to-br from-primary/50 to-accent/50">
@@ -261,7 +261,7 @@ const Profile = () => {
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </div>
 
-              <h2 className="text-xl font-bold text-foreground mb-1">{profileData.full_name}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">{profileData.full_name}</h2>
               <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground mb-2">
                 <GraduationCap className="h-4 w-4" />
                 <span>{profileData.department} · {profileData.year}{getOrdinalSuffix(profileData.year)} Year</span>
@@ -316,7 +316,7 @@ const Profile = () => {
           {/* ── Right: Tabs ── */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 glass border border-border/40 mb-6">
+              <TabsList className="grid w-full grid-cols-2 glass border border-border/40 mb-4 sm:mb-6">
                 <TabsTrigger value="details" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
                   <User className="h-4 w-4 mr-2" />Profile Details
                 </TabsTrigger>
@@ -361,7 +361,7 @@ const Profile = () => {
                   <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
                     <GraduationCap className="h-4 w-4 text-primary" />Academic Information
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { label: 'Department', value: profileData.department },
                       { label: 'Year', value: `${profileData.year}${getOrdinalSuffix(profileData.year)} Year` },

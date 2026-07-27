@@ -118,7 +118,7 @@ export default function CommunityMembers() {
   /* ── Not a member ── */
   if (!loading && !isMember) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: '#111b21' }}>
+      <div className="min-h-screen flex flex-col pb-14 md:pb-0" style={{ background: '#111b21' }}>
         <div className="flex items-center gap-3 px-4 py-3" style={{ background: '#202c33' }}>
           <button onClick={() => navigate(`/communities/${id}`)}
             className="p-1.5 rounded-full text-[#aebac1] hover:text-white hover:bg-white/10 transition-colors">
@@ -138,7 +138,7 @@ export default function CommunityMembers() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#111b21' }}>
+    <div className="min-h-screen flex flex-col pb-14 md:pb-0" style={{ background: '#111b21' }}>
 
       {/* ── Header bar ── */}
       <div className="sticky top-0 z-20 flex items-center gap-3 px-3 py-2.5"

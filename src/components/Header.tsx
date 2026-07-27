@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, Upload, User, LogOut, Bot, Sparkles, Sun, Moon } from "lucide-react";
+import { Menu, X, Search, Upload, User, LogOut, Bot, Sparkles, Sun, Moon, LayoutDashboard, BookOpen, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
@@ -61,7 +61,16 @@ export const Header = () => {
     </button>
   );
 
+  const mobileNavItems = [
+    { path: '/dashboard', label: 'Home', icon: LayoutDashboard },
+    { path: '/resources', label: 'Resources', icon: BookOpen },
+    { path: '/upload', label: 'Upload', icon: Upload },
+    { path: '/communities', label: 'Community', icon: Users },
+    { path: '/ai', label: 'AI', icon: Bot },
+  ];
+
   return (
+    <>
     <header className={`sticky top-0 z-50 transition-all duration-300 ${
       scrolled
         ? 'glass-strong shadow-lg shadow-black/20'
@@ -186,10 +195,10 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile dropdown menu (profile/signout only) */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border/40 animate-fade-in-up">
-            <div className="flex flex-col gap-2">
+          <div className="md:hidden py-3 border-t border-border/40 animate-fade-in-up">
+            <div className="flex flex-col gap-1">
               {user && (
                 <>
                   <form onSubmit={handleSearch} className="relative mb-2">
@@ -201,25 +210,18 @@ export const Header = () => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </form>
-                  {[...navLinks, { path: '/ai', label: '✨ AI Assistant' }].map(({ path, label }) => (
-                    <button
-                      key={path}
-                      onClick={() => { navigate(path); setIsMenuOpen(false); }}
-                      className={`text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        isActive(path) ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  <div className="flex gap-2 pt-2 border-t border-border/40">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => { navigate('/upload'); setIsMenuOpen(false); }}>
-                      <Upload className="h-4 w-4 mr-2" /> Upload
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1" onClick={handleSignOut}>
-                      <LogOut className="h-4 w-4 mr-2" /> Sign Out
-                    </Button>
-                  </div>
+                  <button
+                    onClick={() => { navigate('/profile'); setIsMenuOpen(false); }}
+                    className="text-left px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" /> Profile
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-left px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/5 flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> Sign Out
+                  </button>
                 </>
               )}
               {!user && (
@@ -232,5 +234,28 @@ export const Header = () => {
         )}
       </div>
     </header>
+
+    {/* ── Mobile Bottom Navigation ── */}
+    {user && (
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/40 safe-bottom">
+        <div className="flex items-center justify-around px-2 py-2">
+          {mobileNavItems.map(({ path, label, icon: Icon }) => (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-0 ${
+                isActive(path)
+                  ? 'text-primary bg-primary/10'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className={`h-5 w-5 flex-shrink-0 ${isActive(path) ? 'scale-110' : ''} transition-transform duration-200`} />
+              <span className="text-[10px] font-medium leading-none truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    )}
+    </>
   );
 };

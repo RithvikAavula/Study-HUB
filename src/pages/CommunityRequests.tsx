@@ -107,8 +107,8 @@ const CommunityRequests: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-6 lg:py-10">
-        <div className="flex items-center justify-between mb-4">
+      <div className="container mx-auto px-4 py-6 lg:py-10 pb-24 md:pb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h1 className="text-2xl font-bold">Pending Requests</h1>
             <p className="text-muted-foreground">{community?.name}</p>

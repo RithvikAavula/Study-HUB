@@ -74,7 +74,7 @@ const Index = () => {
       </header>
 
       {/* Hero */}
-      <section className="relative container mx-auto px-4 py-24 text-center overflow-hidden">
+      <section className="relative container mx-auto px-4 py-12 sm:py-24 text-center overflow-hidden">
         <div className="orb w-96 h-96 bg-primary/15 top-0 left-0 -translate-x-1/2 -translate-y-1/2" />
         <div className="orb w-80 h-80 bg-accent/10 bottom-0 right-0 translate-x-1/2 translate-y-1/2" style={{ animationDelay: '4s' }} />
 
@@ -84,13 +84,13 @@ const Index = () => {
             For B.Tech Students, By Students
           </div>
 
-          <h1 className="animate-fade-in-up text-5xl md:text-7xl font-bold mb-6 leading-tight" style={{ animationDelay: '0.1s' }}>
+          <h1 className="animate-fade-in-up text-3xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight" style={{ animationDelay: '0.1s' }}>
             Share & Access
             <br />
             <span className="gradient-text">Academic Resources</span>
           </h1>
 
-          <p className="animate-fade-in-up text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed" style={{ animationDelay: '0.2s' }}>
+          <p className="animate-fade-in-up text-base sm:text-xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed" style={{ animationDelay: '0.2s' }}>
             Connect with peers and access thousands of notes, previous papers, and study materials
             from students across all departments and years.
           </p>
@@ -99,7 +99,7 @@ const Index = () => {
             <Button
               size="lg"
               onClick={() => navigate("/auth")}
-              className="text-lg px-10 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-2xl shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+              className="text-base sm:text-lg px-6 sm:px-10 py-5 sm:py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-2xl shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
             >
               Join StudyHub — It's Free
             </Button>
@@ -107,7 +107,7 @@ const Index = () => {
               size="lg"
               variant="outline"
               onClick={() => navigate("/auth")}
-              className="text-lg px-10 py-6 glass border-border/60 hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300"
+              className="text-base sm:text-lg px-6 sm:px-10 py-5 sm:py-6 glass border-border/60 hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300"
             >
               Browse Resources
             </Button>
@@ -135,9 +135,9 @@ const Index = () => {
       </section>
 
       {/* Features */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
+      <section className="container mx-auto px-4 py-10 sm:py-16">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
             Everything You Need to{' '}
             <span className="gradient-text">Succeed</span>
           </h2>
@@ -147,7 +147,7 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
             <div
               key={i}
@@ -165,13 +165,13 @@ const Index = () => {
       </section>
 
       {/* CTA */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-10 sm:py-16">
         <div className="relative rounded-3xl overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-pink-500/10" />
           <div className="absolute inset-0 glass" />
           <div className="orb w-64 h-64 bg-primary/20 top-0 right-0" style={{ animationDelay: '2s' }} />
-          <div className="relative z-10 p-12 md:p-16 text-center">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+          <div className="relative z-10 p-8 sm:p-12 md:p-16 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
               Ready to Start{' '}
               <span className="gradient-text">Learning?</span>
             </h2>
@@ -181,7 +181,7 @@ const Index = () => {
             <Button
               size="lg"
               onClick={() => navigate("/auth")}
-              className="text-lg px-12 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-2xl shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+              className="text-base sm:text-lg px-8 sm:px-12 py-5 sm:py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-2xl shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
             >
               Join Now — It's Free <ArrowRight className="h-5 w-5 ml-2" />
             </Button>

@@ -374,6 +374,19 @@
   /* ── Smooth scroll ── */
   .smooth-scroll { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
   .touch-manipulation { touch-action: manipulation; }
+
+  /* ── Mobile bottom nav safe area ── */
+  .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  /* Ensure content isn't hidden behind fixed bottom nav on mobile */
+  @media (max-width: 767px) {
+    .mobile-page-content {
+      padding-bottom: 4rem; /* 64px = h-14 bottom nav */
+    }
+  }
+  /* Hide scrollbar but keep scroll */
+  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
 }
 
 /* ── Custom animations ── */

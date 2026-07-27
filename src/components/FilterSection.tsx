@@ -160,7 +160,7 @@ export const FilterSection = ({ onFiltersChange, resetSignal, onClearAll }: Filt
 
           <CollapsibleContent className="space-y-4">
             {/* Filter Dropdowns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
                 <SelectTrigger className="bg-background/50 border-border hover:bg-background transition-colors">
                   <SelectValue placeholder="Department" />

@@ -134,7 +134,7 @@ const Communities: React.FC = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative container mx-auto px-4 py-10 lg:py-14">
+        <div className="relative container mx-auto px-4 py-5 lg:py-14">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div className="animate-fade-in-up">
               <div className="flex items-center gap-2 mb-2">
@@ -170,7 +170,7 @@ const Communities: React.FC = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 pb-12 space-y-6">
+      <div className="container mx-auto px-4 pb-24 md:pb-12 space-y-6">
 
         {/* Create Form — slide in */}
         <div
@@ -184,7 +184,7 @@ const Communities: React.FC = () => {
               </div>
               <h2 className="font-semibold text-foreground">Create a New Community</h2>
             </div>
-            <form onSubmit={handleCreate} className="grid md:grid-cols-2 gap-4">
+            <form onSubmit={handleCreate} className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Community Name *</Label>
                 <Input

@@ -220,17 +220,17 @@ const Upload = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Upload Resource</h1>
-          <p className="text-muted-foreground">
-            Share your study materials with fellow students and help build our academic community.
+      <div className="container mx-auto px-4 py-6 max-w-4xl pb-24 md:pb-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Upload Resource</h1>
+          <p className="text-muted-foreground text-sm">
+            Share your study materials with fellow students.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* Upload Form */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 order-2 md:order-1">
             <Card>
               <CardHeader>
                 <CardTitle>Resource Details</CardTitle>
@@ -262,12 +262,12 @@ const Upload = () => {
                     />
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="department">Department *</Label>
                       <Select value={formData.department} onValueChange={(value) => handleInputChange('department', value)} required>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Department" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
                           {departments.map((dept) => (
@@ -281,7 +281,7 @@ const Upload = () => {
                       <Label htmlFor="year">Year *</Label>
                       <Select value={formData.year} onValueChange={(value) => handleInputChange('year', value)} required>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Year" />
+                          <SelectValue placeholder="Year" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="1">1st Year</SelectItem>
@@ -293,12 +293,12 @@ const Upload = () => {
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="section">Section</Label>
                       <Select value={formData.section} onValueChange={(value) => handleInputChange('section', value)}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Section" />
+                          <SelectValue placeholder="Section" />
                         </SelectTrigger>
                         <SelectContent>
                           {['A', 'B', 'C', 'D', 'E'].map((sec) => (
@@ -309,10 +309,10 @@ const Upload = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="resourceType">Resource Type *</Label>
+                      <Label htmlFor="resourceType">Type *</Label>
                       <Select value={formData.resourceType} onValueChange={(value) => handleInputChange('resourceType', value)} required>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Type" />
+                          <SelectValue placeholder="Type" />
                         </SelectTrigger>
                         <SelectContent>
                           {resourceTypeOptions.map((opt) => (
@@ -337,17 +337,13 @@ const Upload = () => {
                   {/* File Upload */}
                   <div className="space-y-2">
                     <Label htmlFor="file">File *</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 sm:p-6 text-center">
                       {!selectedFile ? (
                         <div>
-                          <UploadIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                              Drag and drop your file here, or click to browse
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Supports: PDF, DOC, TXT, JPG, PNG (Max: 20MB)
-                            </p>
+                          <UploadIcon className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3" />
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Tap to browse or drag & drop</p>
+                            <p className="text-xs text-muted-foreground">PDF, DOC, TXT, JPG, PNG (Max: 20MB)</p>
                           </div>
                           <Input
                             type="file"
@@ -359,21 +355,16 @@ const Upload = () => {
                         </div>
                       ) : (
                         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             {getFileIcon(selectedFile)}
-                            <div className="text-left">
-                              <p className="text-sm font-medium">{selectedFile.name}</p>
+                            <div className="text-left min-w-0">
+                              <p className="text-sm font-medium truncate">{selectedFile.name}</p>
                               <p className="text-xs text-muted-foreground">
                                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                               </p>
                             </div>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedFile(null)}
-                          >
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedFile(null)} className="flex-shrink-0">
                             <FileX className="h-4 w-4" />
                           </Button>
                         </div>
@@ -390,7 +381,7 @@ const Upload = () => {
           </div>
 
           {/* Guidelines */}
-          <div>
+          <div className="order-1 md:order-2">
             <Card>
               <CardHeader>
                 <CardTitle>Upload Guidelines</CardTitle>

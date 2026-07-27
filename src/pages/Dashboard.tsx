@@ -423,7 +423,7 @@ const Dashboard = () => {
       <HeroSection stats={stats} />
       
       {/* Main Content */}
-      <div className="container mx-auto px-4 lg:px-8 py-12">
+      <div className="container mx-auto px-4 lg:px-8 py-6 sm:py-8 pb-24 md:pb-12">
         {/* Filters */}
         <div className="mb-8">
           <FilterSection onFiltersChange={handleFiltersChange} resetSignal={resetSignal} onClearAll={() => setFilters({})} />

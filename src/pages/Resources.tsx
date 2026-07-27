@@ -507,9 +507,8 @@ const Resources = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
       <PullToRefresh onRefresh={fetchResources}>
-        <div className="container mx-auto px-4 py-4 lg:py-8 touch-manipulation">
+        <div className="container mx-auto px-4 py-4 lg:py-8 touch-manipulation pb-24 md:pb-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8">
           <div>
@@ -534,30 +533,30 @@ const Resources = () => {
         {/* Stats Bar */}
         <Card className="mb-4 lg:mb-6">
           <CardContent className="py-3 lg:py-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="grid grid-cols-3 gap-4 lg:gap-6">
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-3 gap-2 lg:gap-6">
                 <div className="text-center">
                   <div className="text-lg lg:text-2xl font-bold text-foreground">{filteredResources.length}</div>
-                  <div className="text-xs lg:text-sm text-muted-foreground">Resources Found</div>
+                  <div className="text-xs lg:text-sm text-muted-foreground">Found</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg lg:text-2xl font-bold text-foreground">
                     {filteredResources.reduce((acc, r) => acc + r.downloads, 0).toLocaleString()}
                   </div>
-                  <div className="text-xs lg:text-sm text-muted-foreground">Total Downloads</div>
+                  <div className="text-xs lg:text-sm text-muted-foreground">Downloads</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg lg:text-2xl font-bold text-foreground">
                     {filteredResources.length > 0 ? (filteredResources.reduce((acc, r) => acc + r.rating, 0) / filteredResources.length).toFixed(1) : '0.0'}
                   </div>
-                  <div className="text-xs lg:text-sm text-muted-foreground">Average Rating</div>
+                  <div className="text-xs lg:text-sm text-muted-foreground">Avg Rating</div>
                 </div>
               </div>
               
               {/* Sort Options */}
-              <div className="flex items-center gap-2 overflow-x-auto">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
                 <SortAsc className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Sort:</span>
                 <div className="flex gap-1">
                   {[
                     { key: 'recent', label: 'Recent' },
