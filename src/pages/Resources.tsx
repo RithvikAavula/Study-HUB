@@ -7,9 +7,8 @@ import { ResourceCard } from '@/components/ResourceCard';
 import { ResourcePreview } from '@/components/ResourcePreview';
 import { ResourceEditDialog } from '@/components/ResourceEditDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Filter, SortAsc, RefreshCw, ChevronDown, Loader2 } from 'lucide-react';
+import { Upload, Filter, SortAsc, RefreshCw, ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
@@ -505,24 +504,28 @@ const Resources = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-mesh">
       <Header />
       <PullToRefresh onRefresh={fetchResources}>
         <div className="container mx-auto px-4 py-4 lg:py-8 touch-manipulation pb-24 md:pb-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Academic Resources</h1>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary mb-3">
+              <Sparkles className="h-3 w-3" />
+              {filteredResources.length} resources found
+            </div>
+            <h1 className="text-2xl lg:text-4xl font-black text-foreground mb-2 tracking-tight">Academic Resources</h1>
             <p className="text-muted-foreground text-sm lg:text-base">
               Discover and download study materials shared by your fellow students
             </p>
           </div>
           <div className="flex gap-2 mt-4 md:mt-0">
-            <Button variant="outline" size="sm" onClick={fetchResources} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={fetchResources} disabled={loading} className="rounded-xl border-border/50 hover:border-primary/40">
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button onClick={() => navigate('/upload')} size="sm" className="lg:size-default">
+            <Button onClick={() => navigate('/upload')} size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg shadow-primary/20">
               <Upload className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Upload Resource</span>
               <span className="sm:hidden">Upload</span>
@@ -531,53 +534,44 @@ const Resources = () => {
         </div>
 
         {/* Stats Bar */}
-        <Card className="mb-4 lg:mb-6">
-          <CardContent className="py-3 lg:py-4">
-            <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-3 gap-2 lg:gap-6">
-                <div className="text-center">
-                  <div className="text-lg lg:text-2xl font-bold text-foreground">{filteredResources.length}</div>
-                  <div className="text-xs lg:text-sm text-muted-foreground">Found</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg lg:text-2xl font-bold text-foreground">
-                    {filteredResources.reduce((acc, r) => acc + r.downloads, 0).toLocaleString()}
-                  </div>
-                  <div className="text-xs lg:text-sm text-muted-foreground">Downloads</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg lg:text-2xl font-bold text-foreground">
-                    {filteredResources.length > 0 ? (filteredResources.reduce((acc, r) => acc + r.rating, 0) / filteredResources.length).toFixed(1) : '0.0'}
-                  </div>
-                  <div className="text-xs lg:text-sm text-muted-foreground">Avg Rating</div>
-                </div>
-              </div>
-              
-              {/* Sort Options */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-                <SortAsc className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm text-muted-foreground whitespace-nowrap">Sort:</span>
-                <div className="flex gap-1">
-                  {[
-                    { key: 'recent', label: 'Recent' },
-                    { key: 'likes', label: 'Likes' },
-                    { key: 'rating', label: 'Rating' },
-                    { key: 'downloads', label: 'Downloads' }
-                  ].map((sort) => (
-                    <Badge
-                      key={sort.key}
-                      variant={sortBy === sort.key ? "default" : "outline"}
-                      className="cursor-pointer whitespace-nowrap hover:scale-105 transition-transform"
-                      onClick={() => handleSort(sort.key)}
-                    >
-                      {sort.label}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { label: 'Found', value: filteredResources.length, color: 'text-primary' },
+            { label: 'Downloads', value: filteredResources.reduce((acc, r) => acc + r.downloads, 0).toLocaleString(), color: 'text-emerald-400' },
+            { label: 'Avg Rating', value: filteredResources.length > 0 ? (filteredResources.reduce((acc, r) => acc + r.rating, 0) / filteredResources.length).toFixed(1) : '0.0', color: 'text-amber-400' },
+          ].map((s, i) => (
+            <div key={i} className="premium-card p-4 text-center">
+              <div className={`text-2xl font-black ${s.color} mb-0.5 tabular-nums`}>{s.value}</div>
+              <div className="text-xs text-muted-foreground font-medium">{s.label}</div>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+
+        {/* Sort Options */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-none">
+          <SortAsc className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm text-muted-foreground whitespace-nowrap font-medium">Sort by:</span>
+          <div className="flex gap-1.5">
+            {[
+              { key: 'recent', label: '🕐 Recent' },
+              { key: 'likes', label: '❤️ Likes' },
+              { key: 'rating', label: '⭐ Rating' },
+              { key: 'downloads', label: '⬇️ Downloads' }
+            ].map((sort) => (
+              <button
+                key={sort.key}
+                onClick={() => handleSort(sort.key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+                  sortBy === sort.key
+                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                    : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-border/40'
+                }`}
+              >
+                {sort.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Filters */}
         <div className="mb-6 lg:mb-8">

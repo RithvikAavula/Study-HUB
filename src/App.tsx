@@ -19,6 +19,7 @@ import CommunityMembers from "./pages/CommunityMembers";
 import CommunityRequests from "./pages/CommunityRequests";
 import CommunityMessages from "./pages/CommunityMessages";
 import AIAssistant from "./pages/AIAssistant";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <PWAInstallPrompt />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Index />} />

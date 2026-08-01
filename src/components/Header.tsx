@@ -238,21 +238,32 @@ export const Header = () => {
     {/* ── Mobile Bottom Navigation ── */}
     {user && (
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/40 safe-bottom">
-        <div className="flex items-center justify-around px-2 py-2">
-          {mobileNavItems.map(({ path, label, icon: Icon }) => (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-0 ${
-                isActive(path)
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Icon className={`h-5 w-5 flex-shrink-0 ${isActive(path) ? 'scale-110' : ''} transition-transform duration-200`} />
-              <span className="text-[10px] font-medium leading-none truncate">{label}</span>
-            </button>
-          ))}
+        <div className="flex items-center justify-around px-1 py-2">
+          {mobileNavItems.map(({ path, label, icon: Icon }) => {
+            const active = isActive(path);
+            return (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all duration-250 min-w-0 ${
+                  active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {active && (
+                  <span className="absolute inset-0 rounded-2xl bg-primary/12 border border-primary/20" />
+                )}
+                <Icon className={`h-5 w-5 flex-shrink-0 relative z-10 transition-all duration-250 ${
+                  active ? 'scale-110' : ''
+                }`} />
+                <span className={`text-[10px] font-semibold leading-none truncate relative z-10 ${
+                  active ? 'text-primary' : ''
+                }`}>{label}</span>
+                {active && (
+                  <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     )}

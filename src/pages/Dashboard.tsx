@@ -418,7 +418,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-mesh">
       <Header />
       <HeroSection stats={stats} />
       
@@ -432,12 +432,17 @@ const Dashboard = () => {
         {/* Resources Section */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Available Resources</h2>
-            <p className="text-muted-foreground">
-              Discover and download study materials shared by your fellow students
-            </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary mb-2">
+              <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-primary" /></span>
+              Live resources
+            </div>
+            <h2 className="text-2xl font-black text-foreground tracking-tight">Available Resources</h2>
+            <p className="text-muted-foreground text-sm mt-1">Discover and download study materials shared by your fellow students</p>
           </div>
-          <Button variant="hero" className="hidden md:flex">
+          <Button
+            className="hidden md:flex rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg shadow-primary/20"
+            onClick={() => navigate('/upload')}
+          >
             <Upload className="h-4 w-4 mr-2" />
             Upload Resource
           </Button>
