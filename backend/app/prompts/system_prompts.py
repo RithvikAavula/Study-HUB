@@ -132,24 +132,14 @@ CONTENT:
 {context}
 
 Rules:
-- Match the marks weightage: {marks}-mark questions need appropriately detailed answers.
-- Answer hints should be bullet points of key points to cover — like a marking scheme.
-- Focus on topics likely to appear in university exams.
-- 2-mark: definition or short answer.
+- Questions must be based ONLY on the provided content.
+- Each answer_hint must be a SINGLE LINE string — key points separated by semicolons, no newlines, no bullet symbols, no unescaped quotes.
+- Each topic must be a short plain string.
 - 5-mark: explanation with example or derivation.
 - 10-mark: detailed analysis, comparison, or long answer.
 
-Respond ONLY with valid JSON, no extra text:
-{{
-  "questions": [
-    {{
-      "question": "string",
-      "marks": {marks},
-      "answer_hint": "string",
-      "topic": "string"
-    }}
-  ]
-}}
+Respond ONLY with a valid JSON object. No text before or after. Use this exact structure:
+{{"questions": [{{"question": "...", "marks": {marks}, "answer_hint": "point1; point2; point3", "topic": "..."}}]}}
 """
 
 SUGGESTED_QUESTIONS_PROMPT = """You are StudyBot, a friendly AI study assistant.
