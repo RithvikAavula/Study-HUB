@@ -1,20 +1,29 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { Copy, Check, BookOpen, ChevronDown, ChevronUp, Layers, HelpCircle, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { Citation } from '@/lib/aiApi';
+import type { Citation, FlashcardsResponse, QuizResponse, SummaryResponse } from '@/lib/aiApi';
+
+export interface ToolData {
+  type: 'flashcards' | 'quiz' | 'summary';
+  flashcards?: FlashcardsResponse;
+  quiz?: QuizResponse;
+  summary?: SummaryResponse;
+}
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
   content: string;
   citations?: Citation[];
   isStreaming?: boolean;
+  toolData?: ToolData;
   onCitationClick?: (citation: Citation) => void;
+  onToolOpen?: (data: ToolData) => void;
 }
 
-export function ChatMessage({ role, content, citations, isStreaming, onCitationClick }: ChatMessageProps) {
+export function ChatMessage({ role, content, citations, isStreaming, toolData, onCitationClick, onToolOpen }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [showCitations, setShowCitations] = useState(false);
 
@@ -161,7 +170,7 @@ export function ChatMessage({ role, content, citations, isStreaming, onCitationC
 
             {/* Action bar */}
             {!isStreaming && content && (
-              <div className="flex items-center gap-1 mt-1.5 px-1">
+              <div className="flex items-center gap-1 mt-1.5 px-1 flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -173,6 +182,18 @@ export function ChatMessage({ role, content, citations, isStreaming, onCitationC
                     : <Copy className="h-3 w-3 mr-1" />}
                   {copied ? 'Copied' : 'Copy'}
                 </Button>
+                {toolData && onToolOpen && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                    onClick={() => onToolOpen(toolData)}
+                  >
+                    {toolData.type === 'flashcards' && <><Layers className="h-3 w-3" /> Open Flashcards</>}
+                    {toolData.type === 'quiz' && <><HelpCircle className="h-3 w-3" /> Open Quiz</>}
+                    {toolData.type === 'summary' && <><AlignLeft className="h-3 w-3" /> Open Summary</>}
+                  </Button>
+                )}
                 {citations && citations.length > 0 && (
                   <Button
                     variant="ghost"

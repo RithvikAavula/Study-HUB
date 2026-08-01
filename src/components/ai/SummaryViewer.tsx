@@ -12,7 +12,7 @@ interface SummaryViewerProps {
 export function SummaryViewer({ summary, onClose }: SummaryViewerProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in p-0 sm:p-4">
-      <div className="bg-background w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[88vh] overflow-hidden border border-border/60">
+      <div className="bg-background w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col h-[92dvh] sm:h-auto sm:max-h-[88vh] border border-border/60">
 
         {/* Header */}
         <div className="relative flex-shrink-0 px-5 pt-5 pb-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background border-b border-border/40">

@@ -17,6 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { aiApi, type Citation, type ConversationSummary, type MessageOut } from '@/lib/aiApi';
 import { ChatMessage } from '@/components/ai/ChatMessage';
+import type { ToolData } from '@/components/ai/ChatMessage';
 import { PDFViewer } from '@/components/ai/PDFViewer';
 import { FlashcardViewer } from '@/components/ai/FlashcardViewer';
 import { QuizViewer } from '@/components/ai/QuizViewer';
@@ -39,6 +40,7 @@ interface LocalMessage {
   content: string;
   citations?: Citation[];
   isStreaming?: boolean;
+  toolData?: ToolData;
 }
 
 const SUGGESTED_DEFAULT = [
@@ -346,6 +348,12 @@ export default function AIAssistant() {
     }
   };
 
+  const handleToolOpen = (data: ToolData) => {
+    if (data.type === 'flashcards' && data.flashcards) setFlashcards(data.flashcards);
+    if (data.type === 'quiz' && data.quiz) setQuiz(data.quiz);
+    if (data.type === 'summary' && data.summary) setSummary(data.summary);
+  };
+
   // ─── AI Tools ───────────────────────────────────────────────────────────────
 
   const runTool = async (tool: string) => {
@@ -359,17 +367,20 @@ export default function AIAssistant() {
         const res = await aiApi.getSummary(selectedResource.id);
         setSummary(res);
         setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Here's a summary of **${selectedResource.title}** 📄\n\n${res.overview}\n\nI've opened the full summary viewer for you — it has key concepts, definitions, and exam tips! 👆` }]);
+          `Here's a summary of **${selectedResource.title}** 📄\n\n${res.overview}\n\nI've opened the full summary viewer for you — it has key concepts, definitions, and exam tips! 👆`,
+          toolData: { type: 'summary', summary: res } }]);
       } else if (tool === 'flashcards') {
         const res = await aiApi.getFlashcards(selectedResource.id, 15);
         setFlashcards(res);
         setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Done! I made **${res.flashcards.length} flashcards** from **${selectedResource.title}** 🃏\n\nThe flashcard viewer is open — flip through them and mark which ones you know. Good luck! 💪` }]);
+          `Done! I made **${res.flashcards.length} flashcards** from **${selectedResource.title}** 🃏\n\nThe flashcard viewer is open — flip through them and mark which ones you know. Good luck! 💪`,
+          toolData: { type: 'flashcards', flashcards: res } }]);
       } else if (tool === 'quiz') {
         const res = await aiApi.getQuiz(selectedResource.id, 10, 'medium', ['mcq', 'true_false']);
         setQuiz(res);
         setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Your quiz is ready! **${res.questions.length} questions** from **${selectedResource.title}** 🎯\n\nThe quiz is open — take your time, read carefully, and let's see how well you know this! 🚀` }]);
+          `Your quiz is ready! **${res.questions.length} questions** from **${selectedResource.title}** 🎯\n\nThe quiz is open — take your time, read carefully, and let's see how well you know this! 🚀`,
+          toolData: { type: 'quiz', quiz: res } }]);
       } else if (tool === 'questions5') {
         const res = await aiApi.getExamQuestions(selectedResource.id, 5, 5);
         const text = res.questions.map((q, i) =>
@@ -609,7 +620,9 @@ export default function AIAssistant() {
                 {messages.map(msg => (
                   <ChatMessage key={msg.id} role={msg.role} content={msg.content}
                     citations={msg.citations} isStreaming={msg.isStreaming}
-                    onCitationClick={handleCitationClick} />
+                    toolData={msg.toolData}
+                    onCitationClick={handleCitationClick}
+                    onToolOpen={handleToolOpen} />
                 ))}
                 <div ref={bottomRef} />
               </div>
