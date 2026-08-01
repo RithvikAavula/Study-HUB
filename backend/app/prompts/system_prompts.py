@@ -139,7 +139,7 @@ Rules:
 - 5-mark: explanation with example or derivation.
 - 10-mark: detailed analysis, comparison, or long answer.
 
-Respond in valid JSON:
+Respond ONLY with valid JSON, no extra text:
 {{
   "questions": [
     {{
