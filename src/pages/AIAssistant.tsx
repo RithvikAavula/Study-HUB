@@ -248,8 +248,34 @@ export default function AIAssistant() {
     if (activeConvId === id) newChat();
   };
 
+  // ─── Intent detection ────────────────────────────────────────────────────
+  const detectIntent = (q: string): string | null => {
+    const t = q.toLowerCase().trim();
+    if (/summar(ize|ise|y)|summarise|give.*summary|overview|tldr|tl;dr/.test(t)) return 'summary';
+    if (/flashcard|flash card|make.*card|create.*card/.test(t)) return 'flashcards';
+    if (/quiz|mcq|multiple.choice|test me|question.*test/.test(t)) return 'quiz';
+    if (/5.?mark|five.?mark/.test(t)) return 'questions5';
+    if (/10.?mark|ten.?mark/.test(t)) return 'questions10';
+    return null;
+  };
+
   const sendMessage = useCallback(async (question: string) => {
     if (!question.trim() || isLoading) return;
+
+    // Intent detection — auto-trigger tool if user types a tool request
+    const intent = detectIntent(question);
+    if (intent && selectedResource) {
+      // Echo the user message first
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'user', content: question }]);
+      setInput('');
+      await runTool(intent);
+      return;
+    }
+    if (intent && !selectedResource) {
+      toast({ title: 'Select a PDF first 📄', description: 'Choose a document from the panel to use this feature.', variant: 'destructive' });
+      return;
+    }
+
     setInput('');
     abortRef.current = false;
 
@@ -332,47 +358,43 @@ export default function AIAssistant() {
       if (tool === 'summary') {
         const res = await aiApi.getSummary(selectedResource.id);
         setSummary(res);
-        const text = [
-          `## Summary: ${selectedResource.title}`,
-          `**Overview:** ${res.overview}`,
-          res.key_concepts.length ? `**Key Concepts:** ${res.key_concepts.join(', ')}` : '',
-          res.exam_tips.length ? `**Exam Tips:**\n${res.exam_tips.map((t, i) => `${i + 1}. ${t}`).join('\n')}` : '',
-        ].filter(Boolean).join('\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: text }]);
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
+          `Here's a summary of **${selectedResource.title}** 📄\n\n${res.overview}\n\nI've opened the full summary viewer for you — it has key concepts, definitions, and exam tips! 👆` }]);
       } else if (tool === 'flashcards') {
         const res = await aiApi.getFlashcards(selectedResource.id, 15);
         setFlashcards(res);
-        const text = `## Flashcards: ${selectedResource.title}\n\n` +
-          res.flashcards.map((f, i) => `**${i + 1}. ${f.front}**\n${f.back}`).join('\n\n---\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: text }]);
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
+          `Done! I made **${res.flashcards.length} flashcards** from **${selectedResource.title}** 🃏\n\nThe flashcard viewer is open — flip through them and mark which ones you know. Good luck! 💪` }]);
       } else if (tool === 'quiz') {
         const res = await aiApi.getQuiz(selectedResource.id, 10, 'medium', ['mcq', 'true_false']);
         setQuiz(res);
-        const text = `## Quiz: ${selectedResource.title}\n\n` +
-          res.questions.map((q, i) =>
-            `**Q${i + 1}.** ${q.question}${q.options ? '\n' + q.options.map((o, j) => `  ${String.fromCharCode(65 + j)}) ${o}`).join('\n') : ''}\n✅ **Answer:** ${q.answer}`
-          ).join('\n\n---\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: text }]);
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
+          `Your quiz is ready! **${res.questions.length} questions** from **${selectedResource.title}** 🎯\n\nThe quiz is open — take your time, read carefully, and let's see how well you know this! 🚀` }]);
       } else if (tool === 'questions5') {
         const res = await aiApi.getExamQuestions(selectedResource.id, 5, 5);
-        const text = res.questions.map((q, i) => `**Q${i + 1} (${q.marks}M):** ${q.question}\n\n*Hint:* ${q.answer_hint}`).join('\n\n---\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: `## 5-Mark Questions\n\n${text}` }]);
+        const text = res.questions.map((q, i) =>
+          `**Q${i + 1}.** ${q.question}\n\n> 💡 *Key points to cover:* ${q.answer_hint}`
+        ).join('\n\n---\n\n');
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
+          `Here are **5 exam-style 5-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 5-mark answers, aim for 3-4 clear points with a brief example each!*` }]);
       } else if (tool === 'questions10') {
         const res = await aiApi.getExamQuestions(selectedResource.id, 10, 5);
-        const text = res.questions.map((q, i) => `**Q${i + 1} (${q.marks}M):** ${q.question}\n\n*Hint:* ${q.answer_hint}`).join('\n\n---\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: `## 10-Mark Questions\n\n${text}` }]);
+        const text = res.questions.map((q, i) =>
+          `**Q${i + 1}.** ${q.question}\n\n> 💡 *Key points to cover:* ${q.answer_hint}`
+        ).join('\n\n---\n\n');
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
+          `Here are **5 exam-style 10-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 10-mark answers, use headings, cover all key points, and add diagrams or examples where possible!*` }]);
       }
     } catch (err: any) {
       const msg = err?.message || String(err);
       const isNotIndexed = msg.includes('No indexed document') || msg.includes('404') || msg.includes('not found');
       toast({
-        title: isNotIndexed ? 'Document not indexed yet' : 'Tool failed',
+        title: isNotIndexed ? 'Still indexing ⏳' : 'Something went wrong',
         description: isNotIndexed
-          ? 'This PDF is still being processed. Please wait a moment and try again.'
-          : msg,
+          ? 'Your PDF is still being processed. Wait for the "Ready to chat!" banner and try again.'
+          : 'Could not complete that action. Please try again in a moment.',
         variant: 'destructive',
       });
-      console.error('[runTool] error:', msg);
     } finally {
       setToolLoading(null);
     }

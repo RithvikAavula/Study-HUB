@@ -47,8 +47,8 @@ export function FlashcardViewer({ flashcards, onClose }: FlashcardViewerProps) {
   const progress = ((index + 1) / flashcards.length) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-xl flex flex-col gap-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-background border border-border/60 sm:rounded-2xl rounded-t-2xl shadow-2xl w-full sm:max-w-xl flex flex-col gap-4 p-6">
 
         {/* Header */}
         <div className="flex items-center justify-between">

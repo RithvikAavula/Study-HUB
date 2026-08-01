@@ -11,7 +11,7 @@ from app.rag.embeddings import embedding_service
 from app.rag.vector_store import chroma_service
 from app.rag.llm_client import llm_service
 from app.services.storage_service import supabase_storage
-from app.prompts.system_prompts import RAG_SYSTEM_PROMPT
+from app.prompts.system_prompts import RAG_SYSTEM_PROMPT, FRIENDLY_FALLBACK_PROMPT
 from app.config.settings import get_settings
 from app.utils.logger import logger
 
@@ -188,7 +188,7 @@ class RAGService:
 
         if not context_parts:
             answer = await llm_service.chat(
-                system_prompt="You are a helpful AI study assistant. Answer the student's question clearly and concisely.",
+                system_prompt=FRIENDLY_FALLBACK_PROMPT,
                 user_message=question,
             )
             return answer, []
@@ -243,7 +243,7 @@ class RAGService:
 
         if not context_parts:
             async for chunk in llm_service.chat_stream(
-                system_prompt="You are a helpful AI study assistant. Answer the student's question clearly and concisely.",
+                system_prompt=FRIENDLY_FALLBACK_PROMPT,
                 user_message=question,
             ):
                 yield chunk
