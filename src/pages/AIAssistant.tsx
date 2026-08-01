@@ -412,11 +412,11 @@ export default function AIAssistant() {
         setActiveConvId(saved.conversation_id);
         aiApi.listConversations().then(setConversations).catch(() => {});
       } else if (tool === 'questions10') {
-        const res = await aiApi.getExamQuestions(selectedResource.id, 10, 5);
+        const res = await aiApi.getExamQuestions(selectedResource.id, 10, 3);
         const text = res.questions.map((q, i) =>
           `**Q${i + 1}.** ${q.question}\n\n> 💡 *Key points to cover:* ${q.answer_hint}`
         ).join('\n\n---\n\n');
-        const content = `Here are **5 exam-style 10-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 10-mark answers, use headings, cover all key points, and add diagrams or examples where possible!*`;
+        const content = `Here are **3 exam-style 10-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 10-mark answers, use headings, cover all key points, and add diagrams or examples where possible!*`;
         setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content }]);
         const saved = await aiApi.saveToolMessage({ conversation_id: activeConvId, title: `10-Mark Questions: ${selectedResource.title}`, user_message: userMessage, assistant_message: content });
         setActiveConvId(saved.conversation_id);
@@ -424,12 +424,12 @@ export default function AIAssistant() {
       }
     } catch (err: any) {
       const msg = err?.message || String(err);
-      const isNotIndexed = msg.includes('No indexed document') || msg.includes('404') || msg.includes('not found');
+      const isNotIndexed = msg.toLowerCase().includes('no indexed') || msg.includes('404') || msg.toLowerCase().includes('not found');
       toast({
         title: isNotIndexed ? 'Still indexing ⏳' : 'Something went wrong',
         description: isNotIndexed
           ? 'Your PDF is still being processed. Wait for the "Ready to chat!" banner and try again.'
-          : 'Could not complete that action. Please try again in a moment.',
+          : msg,
         variant: 'destructive',
       });
     } finally {

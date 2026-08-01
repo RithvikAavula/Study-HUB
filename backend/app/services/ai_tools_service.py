@@ -104,14 +104,18 @@ class AIToolsService:
     async def generate_exam_questions(self, resource_id: str, marks: int, num_questions: int, db: Client) -> ExamQuestionsResponse:
         context, _ = await self._get_document_context(resource_id, db, max_chunks=25)
         prompt = EXAM_QUESTIONS_PROMPT.format(num_questions=num_questions, marks=marks, context=context)
-        raw = await llm_service.chat(system_prompt="", user_message=prompt, temperature=0.4, max_tokens=4096)
+        # 10-mark questions need more tokens due to detailed answer hints
+        max_tok = 6000 if marks >= 10 else 4096
+        raw = await llm_service.chat(system_prompt="", user_message=prompt, temperature=0.4, max_tokens=max_tok)
         try:
             data = self._parse_json_response(raw)
             questions = [ExamQuestion(**q) for q in data.get("questions", [])]
+            if not questions:
+                raise ValueError("No questions parsed")
             return ExamQuestionsResponse(questions=questions, resource_id=resource_id, marks_per_question=marks)
         except Exception as e:
-            logger.error("Exam questions parse error", error=str(e), raw_response=raw[:500])
-            raise ValueError("Failed to parse exam questions response")
+            logger.error("Exam questions parse error", error=str(e), marks=marks, raw_snippet=raw[:300])
+            raise ValueError(f"Failed to generate {marks}-mark questions. Please try again.")
 
     async def generate_suggested_questions(self, resource_id: str, db: Client) -> SuggestedQuestionsResponse:
         fallback = SuggestedQuestionsResponse(
