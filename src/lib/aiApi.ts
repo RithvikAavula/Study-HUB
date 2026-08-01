@@ -245,4 +245,12 @@ export const aiApi = {
   getConversation: (id: string) => get<ConversationDetail>(`/api/ai/conversation/${id}`),
 
   deleteConversation: (id: string) => del(`/api/ai/conversation/${id}`),
+
+  saveToolMessage: (payload: {
+    conversation_id?: string;
+    title?: string;
+    user_message?: string;
+    assistant_message: string;
+    tool_data?: object;
+  }) => post<{ conversation_id: string }>('/api/ai/conversation/message', payload),
 };

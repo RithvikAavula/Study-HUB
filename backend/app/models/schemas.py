@@ -101,7 +101,7 @@ class ExamQuestion(BaseModel):
     question: str
     marks: int
     answer_hint: str
-    topic: str
+    topic: Optional[str] = ""
 
 
 class ExamQuestionsResponse(BaseModel):

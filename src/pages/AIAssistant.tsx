@@ -226,12 +226,24 @@ export default function AIAssistant() {
     try {
       const detail = await aiApi.getConversation(conv.id);
       setActiveConvId(conv.id);
-      setMessages(detail.messages.map(m => ({
-        id: m.id,
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-        citations: m.citations,
-      })));
+      setMessages(detail.messages.map(m => {
+        // Check if this message has a sentinel tool_data citation
+        const sentinelCitation = m.citations?.find(c => c.document_name === '__tool_data__');
+        let toolData: ToolData | undefined;
+        if (sentinelCitation) {
+          try {
+            toolData = JSON.parse(sentinelCitation.snippet) as ToolData;
+          } catch {}
+        }
+        const realCitations = m.citations?.filter(c => c.document_name !== '__tool_data__');
+        return {
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          citations: realCitations?.length ? realCitations : undefined,
+          toolData,
+        };
+      }));
     } catch {
       toast({ title: 'Failed to load conversation', variant: 'destructive' });
     }
@@ -267,10 +279,9 @@ export default function AIAssistant() {
     // Intent detection — auto-trigger tool if user types a tool request
     const intent = detectIntent(question);
     if (intent && selectedResource) {
-      // Echo the user message first
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'user', content: question }]);
       setInput('');
-      await runTool(intent);
+      await runTool(intent, question);
       return;
     }
     if (intent && !selectedResource) {
@@ -356,7 +367,7 @@ export default function AIAssistant() {
 
   // ─── AI Tools ───────────────────────────────────────────────────────────────
 
-  const runTool = async (tool: string) => {
+  const runTool = async (tool: string, userMessage?: string) => {
     if (!selectedResource) {
       toast({ title: 'Select a document first', description: 'Choose a PDF from the right panel.', variant: 'destructive' });
       return;
@@ -366,35 +377,50 @@ export default function AIAssistant() {
       if (tool === 'summary') {
         const res = await aiApi.getSummary(selectedResource.id);
         setSummary(res);
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Here's a summary of **${selectedResource.title}** 📄\n\n${res.overview}\n\nI've opened the full summary viewer for you — it has key concepts, definitions, and exam tips! 👆`,
-          toolData: { type: 'summary', summary: res } }]);
+        const content = `Here's a summary of **${selectedResource.title}** 📄\n\n${res.overview}\n\nI've opened the full summary viewer for you — it has key concepts, definitions, and exam tips! 👆`;
+        const toolData: ToolData = { type: 'summary', summary: res };
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content, toolData }]);
+        const saved = await aiApi.saveToolMessage({ conversation_id: activeConvId, title: `Summary: ${selectedResource.title}`, user_message: userMessage, assistant_message: content, tool_data: toolData });
+        setActiveConvId(saved.conversation_id);
+        aiApi.listConversations().then(setConversations).catch(() => {});
       } else if (tool === 'flashcards') {
         const res = await aiApi.getFlashcards(selectedResource.id, 15);
         setFlashcards(res);
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Done! I made **${res.flashcards.length} flashcards** from **${selectedResource.title}** 🃏\n\nThe flashcard viewer is open — flip through them and mark which ones you know. Good luck! 💪`,
-          toolData: { type: 'flashcards', flashcards: res } }]);
+        const content = `Done! I made **${res.flashcards.length} flashcards** from **${selectedResource.title}** 🃏\n\nThe flashcard viewer is open — flip through them and mark which ones you know. Good luck! 💪`;
+        const toolData: ToolData = { type: 'flashcards', flashcards: res };
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content, toolData }]);
+        const saved = await aiApi.saveToolMessage({ conversation_id: activeConvId, title: `Flashcards: ${selectedResource.title}`, user_message: userMessage, assistant_message: content, tool_data: toolData });
+        setActiveConvId(saved.conversation_id);
+        aiApi.listConversations().then(setConversations).catch(() => {});
       } else if (tool === 'quiz') {
         const res = await aiApi.getQuiz(selectedResource.id, 10, 'medium', ['mcq', 'true_false']);
         setQuiz(res);
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Your quiz is ready! **${res.questions.length} questions** from **${selectedResource.title}** 🎯\n\nThe quiz is open — take your time, read carefully, and let's see how well you know this! 🚀`,
-          toolData: { type: 'quiz', quiz: res } }]);
+        const content = `Your quiz is ready! **${res.questions.length} questions** from **${selectedResource.title}** 🎯\n\nThe quiz is open — take your time, read carefully, and let's see how well you know this! 🚀`;
+        const toolData: ToolData = { type: 'quiz', quiz: res };
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content, toolData }]);
+        const saved = await aiApi.saveToolMessage({ conversation_id: activeConvId, title: `Quiz: ${selectedResource.title}`, user_message: userMessage, assistant_message: content, tool_data: toolData });
+        setActiveConvId(saved.conversation_id);
+        aiApi.listConversations().then(setConversations).catch(() => {});
       } else if (tool === 'questions5') {
         const res = await aiApi.getExamQuestions(selectedResource.id, 5, 5);
         const text = res.questions.map((q, i) =>
           `**Q${i + 1}.** ${q.question}\n\n> 💡 *Key points to cover:* ${q.answer_hint}`
         ).join('\n\n---\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Here are **5 exam-style 5-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 5-mark answers, aim for 3-4 clear points with a brief example each!*` }]);
+        const content = `Here are **5 exam-style 5-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 5-mark answers, aim for 3-4 clear points with a brief example each!*`;
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content }]);
+        const saved = await aiApi.saveToolMessage({ conversation_id: activeConvId, title: `5-Mark Questions: ${selectedResource.title}`, user_message: userMessage, assistant_message: content });
+        setActiveConvId(saved.conversation_id);
+        aiApi.listConversations().then(setConversations).catch(() => {});
       } else if (tool === 'questions10') {
         const res = await aiApi.getExamQuestions(selectedResource.id, 10, 5);
         const text = res.questions.map((q, i) =>
           `**Q${i + 1}.** ${q.question}\n\n> 💡 *Key points to cover:* ${q.answer_hint}`
         ).join('\n\n---\n\n');
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content:
-          `Here are **5 exam-style 10-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 10-mark answers, use headings, cover all key points, and add diagrams or examples where possible!*` }]);
+        const content = `Here are **5 exam-style 10-mark questions** from your document 📝\n\n${text}\n\n---\n*Pro tip: For 10-mark answers, use headings, cover all key points, and add diagrams or examples where possible!*`;
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content }]);
+        const saved = await aiApi.saveToolMessage({ conversation_id: activeConvId, title: `10-Mark Questions: ${selectedResource.title}`, user_message: userMessage, assistant_message: content });
+        setActiveConvId(saved.conversation_id);
+        aiApi.listConversations().then(setConversations).catch(() => {});
       }
     } catch (err: any) {
       const msg = err?.message || String(err);

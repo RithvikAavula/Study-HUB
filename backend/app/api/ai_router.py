@@ -1,7 +1,9 @@
 import json
 import asyncio
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from supabase import Client
 
 from app.database.connection import get_supabase
@@ -15,6 +17,7 @@ from app.models.schemas import (
     DocumentUploadRequest, DocumentUploadResponse, IndexingStatusResponse,
     ConversationSummary, ConversationDetail,
     SuggestedQuestionsRequest, SuggestedQuestionsResponse,
+    Citation,
 )
 from app.rag.vector_store import chroma_service
 from app.rag.embeddings import embedding_service
@@ -50,7 +53,6 @@ async def chat(
                         citations_data = json.loads(chunk[len("__CITATIONS__"):])
                         conv_id = await conversation_service.get_or_create_conversation(user_id, body.conversation_id, body.question[:80], db)
                         await conversation_service.save_message(conv_id, "user", body.question, None, db)
-                        from app.models.schemas import Citation
                         await conversation_service.save_message(conv_id, "assistant", full_text, [Citation(**c) for c in citations_data], db)
                         yield f"data: {json.dumps({'type': 'citations', 'data': citations_data, 'conversation_id': conv_id})}\n\n"
                     else:
@@ -133,9 +135,7 @@ async def suggested_questions(body: SuggestedQuestionsRequest, user: dict = Depe
 
 @router.post("/reindex-document", response_model=DocumentUploadResponse)
 async def reindex_document(body: DocumentUploadRequest, user: dict = Depends(get_current_user), db: Client = Depends(get_db)):
-    """Force re-index a document (deletes existing and re-indexes)."""
     try:
-        # Delete existing document record so index_document re-indexes from scratch
         existing = db.table("documents").select("id").eq("resource_id", body.resource_id).execute()
         if existing.data:
             doc_id = existing.data[0]["id"]
@@ -190,6 +190,42 @@ async def chroma_debug_query(
         }
     finally:
         del emb
+
+
+# ─── Save Tool Message ─────────────────────────────────────────────────────────
+
+class SaveMessageRequest(BaseModel):
+    conversation_id: Optional[str] = None
+    title: Optional[str] = None
+    user_message: Optional[str] = None
+    assistant_message: str
+    tool_data: Optional[dict] = None
+
+
+@router.post("/conversation/message")
+async def save_tool_message(
+    body: SaveMessageRequest,
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_db),
+):
+    user_id = user["id"]
+    title = body.title or (body.user_message[:80] if body.user_message else "Tool result")
+    conv_id = await conversation_service.get_or_create_conversation(user_id, body.conversation_id, title, db)
+    if body.user_message:
+        await conversation_service.save_message(conv_id, "user", body.user_message, None, db)
+    # Encode tool_data as a sentinel citation so it persists in the existing schema without migrations
+    citations = None
+    if body.tool_data:
+        citations = [Citation(
+            document_name="__tool_data__",
+            page_number=0,
+            snippet=json.dumps(body.tool_data),
+            resource_id="",
+            document_id="",
+            chunk_index=0,
+        )]
+    await conversation_service.save_message(conv_id, "assistant", body.assistant_message, citations, db)
+    return {"conversation_id": conv_id}
 
 
 # ─── Conversations ──────────────────────────────────────────────────────────────
