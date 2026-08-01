@@ -1,7 +1,6 @@
 import { X, BookOpen, Lightbulb, Target, Star, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type { SummaryResponse } from '@/lib/aiApi';
 
 interface SummaryViewerProps {
@@ -33,7 +32,7 @@ export function SummaryViewer({ summary, onClose }: SummaryViewerProps) {
         </div>
 
         {/* Scrollable content */}
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="px-5 py-5 space-y-5">
 
             {/* Overview */}
@@ -122,7 +121,7 @@ export function SummaryViewer({ summary, onClose }: SummaryViewerProps) {
             {/* bottom breathing room */}
             <div className="h-2" />
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div className="flex-shrink-0 px-5 py-3 border-t border-border/40 bg-card/50">
